@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "FluxoStudio — Plataforma No-Code Visual" },
+      { name: "description", content: "Editor visual no-code com paleta de componentes HTML/CSS/gráficos, editor de propriedades e eventos, e fluxos de ação com fluxograma editável." },
+      { name: "author", content: "FluxoStudio" },
+      { property: "og:title", content: "FluxoStudio — Plataforma No-Code Visual" },
+      { property: "og:description", content: "Construa páginas, componentes React e fluxos de ação com um editor visual completo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
