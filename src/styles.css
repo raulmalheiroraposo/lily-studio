@@ -147,3 +147,39 @@
     color: var(--color-foreground);
   }
 }
+
+/* Drawflow host styling — dark theme + hover-only connection points */
+.drawflow-host {
+  background-color: var(--canvas);
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.drawflow-host .drawflow .drawflow-node {
+  background: transparent;
+  border: none;
+  padding: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+.drawflow-host .drawflow .drawflow-node.selected .fd-node {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* Hide input/output ports by default; reveal on node hover */
+.drawflow-host .drawflow .drawflow-node .input,
+.drawflow-host .drawflow .drawflow-node .output {
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.drawflow-host .drawflow .drawflow-node:hover .input,
+.drawflow-host .drawflow .drawflow-node:hover .output,
+.drawflow-host .drawflow .drawflow-node.selected .input,
+.drawflow-host .drawflow .drawflow-node.selected .output {
+  opacity: 1;
+}
+.drawflow-host .drawflow .connection .main-path {
+  stroke: var(--primary);
+  stroke-width: 2px;
+}
