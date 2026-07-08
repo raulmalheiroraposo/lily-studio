@@ -66,7 +66,7 @@ type DrawflowExport = {
           html: string;
           pos_x: number;
           pos_y: number;
-          inputs: Record<string, { connections: { node: string; input: string }[] }>;
+      inputs: Record<string, { connections: { node: string; input?: string }[] }>;
           outputs: Record<string, { connections: { node: string; output: string }[] }>;
         }
       >;
@@ -89,7 +89,7 @@ function exportToFlowShape(data: DrawflowExport): { nodes: FlowNode[]; edges: Fl
       const handle = outKey === "output_2" ? "false" : outKey === "output_1" && n.data.kind === "control" ? "true" : undefined;
       for (const c of out.connections ?? []) {
         edges.push({
-          id: `${id}-${outKey}-${c.node}-${c.input}`,
+          id: `${id}-${outKey}-${c.node}`,
           source: String(id),
           target: String(c.node),
           sourceHandle: handle,
@@ -137,7 +137,7 @@ export function FlowEditor() {
     editor.reroute_fix_curvature = true;
     editor.start();
     editorRef.current = editor;
-    editor.on("nodeSelected", (id: number) => setSelected(String(id)));
+    editor.on("nodeSelected", (id) => setSelected(String(id)));
     editor.on("nodeUnselected", () => setSelected(null));
     editor.on("nodeRemoved", () => {
       setSelected(null);
