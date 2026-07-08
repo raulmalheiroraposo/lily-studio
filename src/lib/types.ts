@@ -82,6 +82,7 @@ export type Flow = {
   name: string;
   nodes: FlowNode[];
   edges: FlowEdge[];
+  drawflow?: unknown;
 };
 
 export type ProjectState = {
