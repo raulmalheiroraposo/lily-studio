@@ -2,17 +2,25 @@ import type { Block } from "@/lib/types";
 import { ChartBlock } from "./ChartBlock";
 import { ReactBlock } from "./ReactBlock";
 
-export function BlockRenderer({ block }: { block: Block }) {
+export function BlockRenderer({
+  block,
+  eventHandlers,
+}: {
+  block: Block;
+  eventHandlers?: Record<string, (e: unknown) => void>;
+}) {
   const style: React.CSSProperties = {
     width: "100%",
     height: "100%",
     ...(block.style as React.CSSProperties),
   };
+  const attrs = block.attrs ?? {};
+  const handlers = eventHandlers ?? {};
   switch (block.kind) {
     case "heading":
-      return <h2 style={style}>{block.text}</h2>;
+      return <h2 style={style} {...attrs} {...handlers}>{block.text}</h2>;
     case "paragraph":
-      return <p style={style}>{block.text}</p>;
+      return <p style={style} {...attrs} {...handlers}>{block.text}</p>;
     case "button":
       return (
         <button
@@ -26,6 +34,8 @@ export function BlockRenderer({ block }: { block: Block }) {
             fontWeight: 600,
             ...(block.style as React.CSSProperties),
           }}
+          {...attrs}
+          {...handlers}
         >
           {block.text}
         </button>
@@ -44,6 +54,8 @@ export function BlockRenderer({ block }: { block: Block }) {
             color: "var(--foreground)",
             ...(block.style as React.CSSProperties),
           }}
+          {...attrs}
+          {...handlers}
         />
       );
     case "image":
@@ -52,11 +64,18 @@ export function BlockRenderer({ block }: { block: Block }) {
           src={block.props.src as string}
           alt={block.props.alt as string}
           style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6, ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
         />
       );
     case "link":
       return (
-        <a href={block.props.href as string} style={{ color: "var(--primary)", ...(block.style as React.CSSProperties) }}>
+        <a
+          href={block.props.href as string}
+          style={{ color: "var(--primary)", ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        >
           {block.text}
         </a>
       );
@@ -64,7 +83,11 @@ export function BlockRenderer({ block }: { block: Block }) {
     case "chart-line":
     case "chart-pie":
       return (
-        <div style={{ width: "100%", height: "100%", background: "var(--card)", borderRadius: 8, padding: 8 }}>
+        <div
+          style={{ width: "100%", height: "100%", background: "var(--card)", borderRadius: 8, padding: 8 }}
+          {...attrs}
+          {...handlers}
+        >
           <ChartBlock kind={block.kind} />
         </div>
       );
@@ -74,7 +97,11 @@ export function BlockRenderer({ block }: { block: Block }) {
     case "div":
     default:
       return (
-        <div style={{ width: "100%", height: "100%", borderRadius: 6, ...(block.style as React.CSSProperties) }}>
+        <div
+          style={{ width: "100%", height: "100%", borderRadius: 6, ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        >
           {block.text}
         </div>
       );

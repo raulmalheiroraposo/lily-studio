@@ -3,36 +3,11 @@ import { persist } from "zustand/middleware";
 import type {
   Block,
   BlockKind,
-  Flow,
-  FlowEdge,
-  FlowNode,
   ProjectFile,
   ProjectState,
 } from "./types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-
-function makeStartFlow(name: string): Flow {
-  return {
-    id: uid(),
-    name,
-    nodes: [
-      {
-        id: "start",
-        type: "start",
-        position: { x: 50, y: 100 },
-        data: { label: "Início", kind: "start" },
-      },
-      {
-        id: "end",
-        type: "end",
-        position: { x: 400, y: 100 },
-        data: { label: "Fim", kind: "end" },
-      },
-    ],
-    edges: [],
-  };
-}
 
 function defaultBlockFor(kind: BlockKind): Block {
   const base: Block = {
@@ -44,6 +19,7 @@ function defaultBlockFor(kind: BlockKind): Block {
     h: 120,
     props: {},
     style: {},
+    attrs: {},
     events: [],
   };
   switch (kind) {
@@ -88,21 +64,13 @@ type Actions = {
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
   setActiveFile: (id: string | null) => void;
+  updateFileCode: (id: string, code: string) => void;
   addBlock: (kind: BlockKind) => void;
   updateBlock: (id: string, patch: Partial<Block>) => void;
   removeBlock: (id: string) => void;
   selectBlock: (id: string | null) => void;
-  addEvent: (blockId: string, event: string, flowId: string) => void;
+  addEvent: (blockId: string, binding: import("./types").EventBinding) => void;
   removeEvent: (blockId: string, index: number) => void;
-  createFlow: (name?: string) => string;
-  deleteFlow: (id: string) => void;
-  setActiveFlow: (id: string | null) => void;
-  updateFlow: (id: string, patch: Partial<Flow>) => void;
-  setFlowNodes: (id: string, nodes: FlowNode[]) => void;
-  setFlowEdges: (id: string, edges: FlowEdge[]) => void;
-  updateFlowNodeData: (flowId: string, nodeId: string, patch: Partial<FlowNode["data"]>) => void;
-  addFlowNode: (flowId: string, kind: FlowNode["data"]["kind"]) => void;
-  removeFlowNode: (flowId: string, nodeId: string) => void;
   importProject: (data: ProjectState) => void;
   exportProject: () => ProjectState;
   resetProject: () => void;
@@ -110,10 +78,8 @@ type Actions = {
 
 const initial: ProjectState = {
   files: [],
-  flows: [],
   activeFileId: null,
   selectedBlockId: null,
-  activeFlowId: null,
 };
 
 export const useProject = create<ProjectState & Actions>()(
@@ -129,20 +95,16 @@ export const useProject = create<ProjectState & Actions>()(
             ? `pagina-${get().files.filter((f) => f.type === "page").length + 1}.html`
             : type === "component"
             ? `Componente${get().files.filter((f) => f.type === "component").length + 1}.tsx`
-            : `acao-${get().files.filter((f) => f.type === "action").length + 1}.ts`);
+            : `script-${get().files.filter((f) => f.type === "script").length + 1}.js`);
         const file: ProjectFile =
-          type === "action"
-            ? (() => {
-                const flow = makeStartFlow(defaultName);
-                set((s) => ({ flows: [...s.flows, flow] }));
-                return {
-                  id,
-                  name: defaultName,
-                  type,
-                  flowId: flow.id,
-                  code: "// Ação vinculada ao fluxo. Edite o fluxograma para definir a sequência.\n",
-                };
-              })()
+          type === "script"
+            ? {
+                id,
+                name: defaultName,
+                type,
+                code:
+                  "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
+              }
             : { id, name: defaultName, type, blocks: [] };
         set((s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
@@ -155,12 +117,14 @@ export const useProject = create<ProjectState & Actions>()(
       renameFile: (id, name) =>
         set((s) => ({ files: s.files.map((f) => (f.id === id ? { ...f, name } : f)) })),
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
+      updateFileCode: (id, code) =>
+        set((s) => ({ files: s.files.map((f) => (f.id === id ? { ...f, code } : f)) })),
 
       addBlock: (kind) => {
         const { activeFileId, files } = get();
         if (!activeFileId) return;
         const file = files.find((f) => f.id === activeFileId);
-        if (!file || file.type === "action") return;
+        if (!file || file.type === "script") return;
         const block = defaultBlockFor(kind);
         set((s) => ({
           files: s.files.map((f) =>
@@ -186,14 +150,14 @@ export const useProject = create<ProjectState & Actions>()(
         })),
       selectBlock: (id) => set({ selectedBlockId: id }),
 
-      addEvent: (blockId, event, flowId) =>
+      addEvent: (blockId, binding) =>
         set((s) => ({
           files: s.files.map((f) =>
             f.blocks
               ? {
                   ...f,
                   blocks: f.blocks.map((b) =>
-                    b.id === blockId ? { ...b, events: [...b.events, { event, flowId }] } : b
+                    b.id === blockId ? { ...b, events: [...b.events, binding] } : b
                   ),
                 }
               : f
@@ -215,84 +179,13 @@ export const useProject = create<ProjectState & Actions>()(
           ),
         })),
 
-      createFlow: (name) => {
-        const flow = makeStartFlow(name ?? `Fluxo ${get().flows.length + 1}`);
-        set((s) => ({ flows: [...s.flows, flow], activeFlowId: flow.id }));
-        return flow.id;
-      },
-      deleteFlow: (id) =>
-        set((s) => ({
-          flows: s.flows.filter((f) => f.id !== id),
-          activeFlowId: s.activeFlowId === id ? null : s.activeFlowId,
-        })),
-      setActiveFlow: (id) => set({ activeFlowId: id }),
-      updateFlow: (id, patch) =>
-        set((s) => ({ flows: s.flows.map((f) => (f.id === id ? { ...f, ...patch } : f)) })),
-      setFlowNodes: (id, nodes) =>
-        set((s) => ({ flows: s.flows.map((f) => (f.id === id ? { ...f, nodes } : f)) })),
-      setFlowEdges: (id, edges) =>
-        set((s) => ({ flows: s.flows.map((f) => (f.id === id ? { ...f, edges } : f)) })),
-      updateFlowNodeData: (flowId, nodeId, patch) =>
-        set((s) => ({
-          flows: s.flows.map((f) =>
-            f.id === flowId
-              ? {
-                  ...f,
-                  nodes: f.nodes.map((n) =>
-                    n.id === nodeId ? { ...n, data: { ...n.data, ...patch } } : n
-                  ),
-                }
-              : f
-          ),
-        })),
-      addFlowNode: (flowId, kind) => {
-        const id = uid();
-        const labels: Record<string, string> = {
-          function: "Função",
-          http: "HTTP",
-          loop: "Laço",
-          control: "Se/Então",
-          start: "Início",
-          end: "Fim",
-        };
-        const node: FlowNode = {
-          id,
-          type: kind,
-          position: { x: 200 + Math.random() * 200, y: 200 + Math.random() * 100 },
-          data: {
-            label: labels[kind] ?? kind,
-            kind,
-            code: kind === "function" ? "// código da função\nreturn ctx;" : undefined,
-            url: kind === "http" ? "https://api.example.com/data" : undefined,
-            method: kind === "http" ? "GET" : undefined,
-            condition: kind === "control" ? "ctx.value > 0" : undefined,
-            iterations: kind === "loop" ? 3 : undefined,
-          },
-        };
-        set((s) => ({
-          flows: s.flows.map((f) => (f.id === flowId ? { ...f, nodes: [...f.nodes, node] } : f)),
-        }));
-      },
-      removeFlowNode: (flowId, nodeId) =>
-        set((s) => ({
-          flows: s.flows.map((f) =>
-            f.id === flowId
-              ? {
-                  ...f,
-                  nodes: f.nodes.filter((n) => n.id !== nodeId),
-                  edges: f.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
-                }
-              : f
-          ),
-        })),
-
       importProject: (data) => set({ ...initial, ...data }),
       exportProject: () => {
-        const { files, flows, activeFileId, selectedBlockId, activeFlowId } = get();
-        return { files, flows, activeFileId, selectedBlockId, activeFlowId };
+        const { files, activeFileId, selectedBlockId } = get();
+        return { files, activeFileId, selectedBlockId };
       },
       resetProject: () => set(initial),
     }),
-    { name: "nocode-project-v1" }
+    { name: "nocode-project-v2" }
   )
 );
