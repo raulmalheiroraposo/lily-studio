@@ -1,11 +1,11 @@
-import { FileCode, FileText, Workflow, Plus, Trash2 } from "lucide-react";
+import { FileCode, FileText, ScrollText, Plus, Trash2 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import type { ProjectFile } from "@/lib/types";
 
 const icons = {
   page: FileText,
   component: FileCode,
-  action: Workflow,
+  script: ScrollText,
 };
 
 export function FileTree() {
@@ -18,7 +18,7 @@ export function FileTree() {
   const groups: { key: ProjectFile["type"]; label: string }[] = [
     { key: "page", label: "Páginas HTML" },
     { key: "component", label: "Componentes React" },
-    { key: "action", label: "Ações (Fluxos)" },
+    { key: "script", label: "Scripts" },
   ];
 
   return (
