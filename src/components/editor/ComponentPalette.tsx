@@ -35,7 +35,7 @@ export function ComponentPalette() {
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
-  const disabled = !activeFile || activeFile.type === "action";
+  const disabled = !activeFile || activeFile.type === "script";
 
   const groups = Array.from(new Set(items.map((i) => i.group)));
   return (
