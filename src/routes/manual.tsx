@@ -5,9 +5,9 @@ export const Route = createFileRoute("/manual")({
   head: () => ({
     meta: [
       { title: "Manual — FluxoStudio" },
-      { name: "description", content: "Guia completo de uso da plataforma no-code FluxoStudio: canvas, componentes, fluxos, propriedades, eventos e editor de código." },
+      { name: "description", content: "Guia completo de uso da plataforma no-code FluxoStudio: canvas, componentes, scripts, propriedades, atributos, eventos e editor de código." },
       { property: "og:title", content: "Manual — FluxoStudio" },
-      { property: "og:description", content: "Como usar o editor visual, criar fluxos e editar código." },
+      { property: "og:description", content: "Como usar o editor visual, criar scripts e editar código." },
     ],
   }),
   component: Manual,
@@ -37,16 +37,15 @@ function Manual() {
         `}</style>
 
         <p className="text-lg text-muted-foreground">
-          O <b className="text-foreground">FluxoStudio</b> é uma plataforma no-code para construir páginas HTML, componentes React e fluxos de ação de forma visual — arraste, edite, conecte e execute.
+          O <b className="text-foreground">FluxoStudio</b> é uma plataforma no-code para construir páginas HTML, componentes React e scripts — arraste, edite, vincule eventos e execute.
         </p>
 
         <h2>1. Interface</h2>
         <ul>
-          <li><b>Barra superior:</b> nome do projeto, arquivo aberto, botões <i>Importar</i>, <i>Salvar/Exportar</i> e <i>Manual</i>.</li>
-          <li><b>Painel esquerdo:</b> alterna entre <i>Arquivos</i> (páginas HTML, componentes React, ações) e <i>Componentes</i> (paleta HTML/CSS/Gráficos/React).</li>
+          <li><b>Barra superior:</b> nome do projeto, arquivo aberto, alternador <i>Preview / Editar</i>, botões <i>Importar</i>, <i>Salvar/Exportar</i> e <i>Manual</i>.</li>
+          <li><b>Painel esquerdo:</b> alterna entre <i>Arquivos</i> (páginas HTML, componentes React, scripts) e <i>Componentes</i> (paleta HTML/CSS/Gráficos/React).</li>
           <li><b>Canvas central:</b> área de edição visual do arquivo aberto (drag &amp; resize).</li>
-          <li><b>Painel de fluxo (inferior):</b> fluxograma editável da ação/fluxo em foco.</li>
-          <li><b>Painel direito:</b> propriedades, estilo e eventos do componente selecionado.</li>
+          <li><b>Painel direito:</b> propriedades, atributos, estilo e eventos do componente selecionado.</li>
         </ul>
 
         <h2>2. Criando um arquivo</h2>
@@ -55,7 +54,7 @@ function Manual() {
             <ul>
               <li><b>Páginas HTML</b> — página do site montada com blocos HTML.</li>
               <li><b>Componentes React</b> — bloco reutilizável com código React.</li>
-              <li><b>Ações (Fluxos)</b> — script que executa um fluxograma quando disparado.</li>
+              <li><b>Scripts</b> — arquivo JavaScript com funções que podem ser chamadas por eventos.</li>
             </ul>
           </li>
           <li>Clique no arquivo para abri-lo no canvas.</li>
@@ -71,46 +70,37 @@ function Manual() {
           <li>Componentes React aparecem como blocos com preview do código-fonte.</li>
         </ol>
 
-        <h2>4. Editando propriedades, estilo e eventos</h2>
-        <p>Com um componente selecionado, o painel direito mostra três abas:</p>
+        <h2>4. Editando propriedades, atributos, estilo e eventos</h2>
+        <p>Com um componente selecionado, o painel direito mostra quatro abas:</p>
         <ul>
           <li><b>Props:</b> texto, atributos (src, href, placeholder), largura/altura.</li>
+          <li><b>Attrs:</b> atributos HTML dinâmicos aplicados diretamente à tag (ex.: <code>id</code>, <code>title</code>, <code>data-*</code>, <code>aria-*</code>). Adicione qualquer par nome/valor.</li>
           <li><b>Estilo:</b> background, color, border, borderRadius, padding, fontSize, fontWeight, textAlign — CSS puro.</li>
-          <li><b>Eventos:</b> escolha um evento (<code>onClick</code>, <code>onChange</code> etc.) e vincule a um <b>Fluxo</b> existente ou clique em <i>novo fluxo</i> para criar na hora.</li>
+          <li><b>Eventos:</b> escolha um evento (<code>onClick</code>, <code>onChange</code> etc.) e vincule a uma <b>função de script</b> ou a uma <b>URL</b> (site/API) com o método HTTP desejado.</li>
         </ul>
 
-        <h2>5. Editor de Fluxo (fluxograma)</h2>
-        <p>Um fluxo é uma sequência de <b>componentes de ação</b> conectados por setas. Quando um evento acionado, o fluxo é executado do nó <i>Início</i> até o <i>Fim</i>.</p>
-        <h3>Tipos de ação</h3>
-        <ul>
-          <li><b>Função</b> — bloco de código JavaScript (recebe <code>ctx</code>, retorna o novo <code>ctx</code>).</li>
-          <li><b>HTTP</b> — chamada a uma URL (site ou API) com método GET/POST/PUT/DELETE/PATCH.</li>
-          <li><b>Laço</b> — repete o próximo bloco N vezes.</li>
-          <li><b>Se/Então</b> — avalia uma condição JS; usa saída <i>true</i> ou <i>false</i>.</li>
-          <li><b>Início</b> / <b>Fim</b> — âncoras do fluxo (Início já vem criado).</li>
-        </ul>
-        <h3>Como montar</h3>
+        <h2>5. Scripts</h2>
+        <p>Scripts são arquivos JavaScript. Toda função declarada no topo (via <code>function</code>, <code>const</code>, <code>let</code> ou <code>var</code>) fica automaticamente disponível na aba <i>Eventos</i> de qualquer componente.</p>
         <ol>
-          <li>Escolha o fluxo na lista lateral ou crie um novo com <kbd>+</kbd>.</li>
-          <li>Clique em um botão de <i>Adicionar nó</i> para inserir um bloco.</li>
-          <li>Arraste dos <i>handles</i> (bolinhas) do nó de origem até o nó de destino para conectar.</li>
-          <li>Clique num nó para editar rótulo, URL, método, condição, iterações etc. no painel lateral.</li>
-          <li>Remova nós pelo botão <i>lixeira</i> do painel lateral.</li>
-          <li>Clique em <b>Executar</b> para rodar o fluxo agora e ver o log passo-a-passo.</li>
+          <li>Crie um script em <i>Arquivos → Scripts → +</i>.</li>
+          <li>Escreva funções, ex.: <code>function saudacao() {"{"} alert('Oi!'); {"}"}</code>.</li>
+          <li>Selecione um componente, vá em <i>Eventos</i>, escolha <i>Função de script</i>, o script e a função. Clique <b>Vincular função</b>.</li>
+          <li>Para chamar uma URL, escolha <i>URL</i>, informe método e endereço e clique <b>Vincular URL</b>.</li>
+          <li>Ative <b>Preview</b> na barra superior para disparar os eventos de verdade.</li>
         </ol>
 
         <h2>6. Editor de código-fonte (CodeMirror)</h2>
-        <p>Para componentes <b>React</b> e para nós de <b>Função</b> nos fluxos há um botão <i>Editar código-fonte</i> / <i>Editar código</i>. Ele abre um editor com:</p>
+        <p>Para componentes <b>React</b> há um botão <i>Editar código-fonte</i>. Arquivos de <b>Script</b> abrem o editor diretamente no canvas. Ambos oferecem:</p>
         <ul>
           <li>Realce de sintaxe (JS/TS/JSX, HTML, CSS, JSON).</li>
           <li>Numeração de linhas, dobra de código, linha ativa.</li>
-          <li>Botão <b>Salvar</b> grava o código no componente/ação.</li>
+          <li>Alterações salvas automaticamente no projeto.</li>
         </ul>
 
         <h2>7. Salvar, abrir e exportar</h2>
         <ul>
           <li>Tudo é salvo automaticamente no seu navegador (localStorage).</li>
-          <li><b>Salvar/Exportar</b> baixa um arquivo <code>projeto-nocode.json</code> com <i>todo</i> o projeto (arquivos + fluxos).</li>
+          <li><b>Salvar/Exportar</b> baixa um arquivo <code>projeto-nocode.json</code> com <i>todo</i> o projeto (páginas, componentes e scripts).</li>
           <li><b>Importar</b> carrega um <code>.json</code> exportado anteriormente, substituindo o projeto atual.</li>
         </ul>
 
@@ -122,11 +112,11 @@ function Manual() {
           <li>Clique em <b>Create Repository</b> — o código do FluxoStudio é enviado ao seu GitHub.</li>
           <li>A partir daí, cada alteração feita aqui é enviada automaticamente para o repositório.</li>
         </ol>
-        <p>Já os <i>projetos</i> criados dentro do editor (páginas, componentes, fluxos) são persistidos como JSON. Faça <i>Salvar/Exportar</i> e adicione o arquivo <code>projeto-nocode.json</code> ao repositório se quiser versioná-los junto.</p>
+        <p>Já os <i>projetos</i> criados dentro do editor (páginas, componentes, scripts) são persistidos como JSON. Faça <i>Salvar/Exportar</i> e adicione o arquivo <code>projeto-nocode.json</code> ao repositório se quiser versioná-los junto.</p>
 
         <hr />
         <p className="text-sm text-muted-foreground">
-          Dica: comece criando uma <i>Página</i>, adicione um <i>Botão</i>, crie um <i>Fluxo</i> com um nó <i>HTTP</i> apontando para uma API pública, vincule o <code>onClick</code> ao fluxo e clique em <b>Executar</b> no painel de fluxo — pronto, seu primeiro no-code está de pé.
+          Dica: crie uma <i>Página</i>, adicione um <i>Botão</i>, crie um <i>Script</i> com <code>function alo() {"{"} alert('Olá!') {"}"}</code>, vincule o <code>onClick</code> do botão à função <code>alo</code> e clique em <b>Preview</b> — pronto, seu primeiro no-code está de pé.
         </p>
       </article>
     </div>
