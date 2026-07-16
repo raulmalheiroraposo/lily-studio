@@ -2,14 +2,17 @@ import type { EventBinding, ProjectFile } from "./types";
 
 function getScriptExports(code: string): Record<string, unknown> {
   try {
+    const names = Array.from(
+      code.matchAll(/(?:^|\n)\s*(?:function|const|let|var)\s+([A-Za-z_$][\w$]*)/g)
+    ).map((m) => m[1]);
     // eslint-disable-next-line no-new-func
     const fn = new Function(
       "exports",
-      `${code}\n;try{\n  const __all = (typeof this === 'object' && this) || {};\n}catch(e){}\n;` +
-        // Best-effort: scan for top-level function declarations and const/let/var assignments and expose them.
-        `const __names = Array.from((${JSON.stringify(code)}).matchAll(/(?:function|const|let|var)\\s+([A-Za-z_$][\\w$]*)/g)).map(m=>m[1]);` +
-        `for (const n of __names) { try { exports[n] = eval(n); } catch(e){} }` +
-        `return exports;`
+      `${code}\n;` +
+        names
+          .map((n) => `try { exports[${JSON.stringify(n)}] = ${n}; } catch(e){}`)
+          .join("\n") +
+        `\nreturn exports;`
     );
     const exp: Record<string, unknown> = {};
     fn(exp);
