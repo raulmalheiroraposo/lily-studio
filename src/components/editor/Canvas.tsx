@@ -1,19 +1,39 @@
 import { Rnd } from "react-rnd";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Code2, Trash2 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import { BlockRenderer } from "@/components/blocks/HtmlBlock";
 import { CodeEditorModal } from "./CodeEditorModal";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { runBinding } from "@/lib/script-runtime";
 
-export function Canvas() {
+export function Canvas({ preview }: { preview: boolean }) {
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
+  const files = useProject((s) => s.files);
   const selectedBlockId = useProject((s) => s.selectedBlockId);
   const selectBlock = useProject((s) => s.selectBlock);
   const updateBlock = useProject((s) => s.updateBlock);
   const removeBlock = useProject((s) => s.removeBlock);
+  const updateFileCode = useProject((s) => s.updateFileCode);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
+
+  const buildHandlers = useCallback(
+    (block: { events: { event: string }[] }) => {
+      const map: Record<string, (e: unknown) => void> = {};
+      for (const ev of block.events) {
+        const prev = map[ev.event];
+        map[ev.event] = (e) => {
+          prev?.(e);
+          void runBinding(ev as never, files, e);
+        };
+      }
+      return map;
+    },
+    [files]
+  );
 
   if (!activeFile) {
     return (
@@ -22,10 +42,28 @@ export function Canvas() {
       </div>
     );
   }
-  if (activeFile.type === "action") {
+  if (activeFile.type === "script") {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Este arquivo é uma <b className="mx-1 text-foreground">Ação</b>. Abra o painel de fluxo abaixo para editar.
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between border-b border-border bg-[color:var(--panel)] px-3 py-2 text-xs">
+          <div className="font-semibold">
+            Editando script:&nbsp;<span className="font-mono text-primary">{activeFile.name}</span>
+          </div>
+          <div className="text-muted-foreground">
+            Declare funções (<code>function nome()</code> / <code>const nome = () =&gt; …</code>) — elas ficam disponíveis nos eventos.
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <CodeMirror
+            value={activeFile.code ?? ""}
+            height="100%"
+            theme="dark"
+            extensions={[javascript({ jsx: false, typescript: false })]}
+            onChange={(v) => updateFileCode(activeFile.id, v)}
+            basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: true }}
+            style={{ height: "100%", fontSize: 13 }}
+          />
+        </div>
       </div>
     );
   }
@@ -34,10 +72,25 @@ export function Canvas() {
     <div
       className="relative h-full w-full overflow-auto"
       style={{ backgroundColor: "var(--canvas)", backgroundImage: "radial-gradient(circle, var(--border) 1px, transparent 1px)", backgroundSize: "20px 20px" }}
-      onClick={() => selectBlock(null)}
+      onClick={() => !preview && selectBlock(null)}
     >
       <div className="relative mx-auto my-8 min-h-[900px] w-[min(1100px,95%)] rounded-lg border border-border bg-background shadow-xl">
-        {activeFile.blocks?.map((block) => {
+        {preview
+          ? activeFile.blocks?.map((block) => (
+              <div
+                key={block.id}
+                style={{
+                  position: "absolute",
+                  left: block.x,
+                  top: block.y,
+                  width: block.w,
+                  height: block.h,
+                }}
+              >
+                <BlockRenderer block={block} eventHandlers={buildHandlers(block)} />
+              </div>
+            ))
+          : activeFile.blocks?.map((block) => {
           const selected = block.id === selectedBlockId;
           return (
             <Rnd
