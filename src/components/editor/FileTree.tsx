@@ -1,4 +1,5 @@
-import { FileCode, FileText, ScrollText, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { FileCode, FileText, ScrollText, Plus, Trash2, Pencil, Check } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import type { ProjectFile } from "@/lib/types";
 
@@ -14,6 +15,9 @@ export function FileTree() {
   const setActiveFile = useProject((s) => s.setActiveFile);
   const createFile = useProject((s) => s.createFile);
   const deleteFile = useProject((s) => s.deleteFile);
+  const renameFile = useProject((s) => s.renameFile);
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [filter, setFilter] = useState("");
 
   const groups: { key: ProjectFile["type"]; label: string }[] = [
     { key: "page", label: "Páginas HTML" },
@@ -23,6 +27,12 @@ export function FileTree() {
 
   return (
     <div className="space-y-3">
+      <input
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filtrar arquivos..."
+        className="w-full rounded border border-border bg-input px-2 py-1 text-xs"
+      />
       {groups.map((g) => (
         <div key={g.key}>
           <div className="mb-1 flex items-center justify-between">
@@ -38,9 +48,39 @@ export function FileTree() {
             </button>
           </div>
           <div className="space-y-0.5">
-            {files.filter((f) => f.type === g.key).map((f) => {
+            {files
+              .filter(
+                (f) =>
+                  f.type === g.key &&
+                  f.name.toLowerCase().includes(filter.trim().toLowerCase())
+              )
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((f) => {
               const Icon = icons[f.type];
               const active = f.id === activeFileId;
+              if (editing?.id === f.id) {
+                const commit = () => {
+                  if (editing.name.trim()) renameFile(f.id, editing.name.trim());
+                  setEditing(null);
+                };
+                return (
+                  <div key={f.id} className="flex items-center gap-1 px-1 py-1">
+                    <input
+                      autoFocus
+                      value={editing.name}
+                      onChange={(e) => setEditing({ id: f.id, name: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commit();
+                        if (e.key === "Escape") setEditing(null);
+                      }}
+                      className="flex-1 rounded border border-primary bg-input px-1.5 py-0.5 text-xs"
+                    />
+                    <button onClick={commit} className="text-primary" title="Salvar nome">
+                      <Check className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              }
               return (
                 <div
                   key={f.id}
@@ -51,6 +91,16 @@ export function FileTree() {
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="flex-1 truncate">{f.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditing({ id: f.id, name: f.name });
+                    }}
+                    title="Renomear"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
