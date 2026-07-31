@@ -13,7 +13,8 @@ export function PropertiesPanel() {
     const file = s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null;
     return file?.blocks?.find((b) => b.id === s.selectedBlockId) ?? null;
   });
-  const scripts = useProject((s) => s.files.filter((f) => f.type === "script"));
+  const allFiles = useProject((s) => s.files);
+  const scripts = useMemo(() => allFiles.filter((f) => f.type === "script"), [allFiles]);
   const updateBlock = useProject((s) => s.updateBlock);
   const addEvent = useProject((s) => s.addEvent);
   const removeEvent = useProject((s) => s.removeEvent);
