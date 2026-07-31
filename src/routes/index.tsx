@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2 } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
 import { Canvas } from "@/components/editor/Canvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
+import { HistoryPanel } from "@/components/editor/HistoryPanel";
+import { LogPanel } from "@/components/editor/LogPanel";
+import { exportProjectZip } from "@/lib/export-zip";
 import { useProject } from "@/lib/project-store";
 
 export const Route = createFileRoute("/")({
@@ -12,13 +15,18 @@ export const Route = createFileRoute("/")({
 });
 
 function EditorPage() {
-  const [leftTab, setLeftTab] = useState<"palette" | "files">("files");
+  const [leftTab, setLeftTab] = useState<"palette" | "files" | "history">("files");
   const [preview, setPreview] = useState(false);
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
   const exportProject = useProject((s) => s.exportProject);
   const importProject = useProject((s) => s.importProject);
+  const undo = useProject((s) => s.undo);
+  const redo = useProject((s) => s.redo);
+  const lastSavedAt = useProject((s) => s.lastSavedAt);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const doExport = () => {
     const data = JSON.stringify(exportProject(), null, 2);
@@ -42,6 +50,7 @@ function EditorPage() {
     };
     input.click();
   };
+  const doExportZip = () => void exportProjectZip(exportProject());
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
@@ -59,8 +68,27 @@ function EditorPage() {
               {activeFile.name}
             </div>
           )}
+          <span className="text-[11px] text-muted-foreground">
+            {mounted && lastSavedAt
+              ? `salvo ${new Date(lastSavedAt).toLocaleTimeString("pt-BR")}`
+              : "autosave ativo"}
+          </span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={undo}
+            title="Desfazer"
+            className="rounded border border-border p-1 hover:bg-accent"
+          >
+            <Undo2 className="h-3 w-3" />
+          </button>
+          <button
+            onClick={redo}
+            title="Refazer"
+            className="rounded border border-border p-1 hover:bg-accent"
+          >
+            <Redo2 className="h-3 w-3" />
+          </button>
           <button
             onClick={() => setPreview((v) => !v)}
             className={`flex items-center gap-1 rounded border px-2 py-1 text-xs ${
@@ -84,6 +112,12 @@ function EditorPage() {
           >
             <Download className="h-3 w-3" /> Salvar/Exportar
           </button>
+          <button
+            onClick={doExportZip}
+            className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
+          >
+            <FileArchive className="h-3 w-3" /> Baixar ZIP
+          </button>
           <Link
             to="/manual"
             className="flex items-center gap-1 rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
@@ -98,7 +132,7 @@ function EditorPage() {
         {/* Left */}
         <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-[color:var(--panel)]">
           <div className="flex border-b border-border text-xs">
-            {(["files", "palette"] as const).map((t) => (
+            {(["files", "palette", "history"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setLeftTab(t)}
@@ -108,13 +142,19 @@ function EditorPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t === "files" ? <Layers className="h-3 w-3" /> : <LayoutGrid className="h-3 w-3" />}
-                {t === "files" ? "Arquivos" : "Componentes"}
+                {t === "files" ? (
+                  <Layers className="h-3 w-3" />
+                ) : t === "palette" ? (
+                  <LayoutGrid className="h-3 w-3" />
+                ) : (
+                  <History className="h-3 w-3" />
+                )}
+                {t === "files" ? "Arquivos" : t === "palette" ? "Componentes" : "Histórico"}
               </button>
             ))}
           </div>
           <div className="flex-1 overflow-auto p-3">
-            {leftTab === "files" ? <FileTree /> : <ComponentPalette />}
+            {leftTab === "files" ? <FileTree /> : leftTab === "palette" ? <ComponentPalette /> : <HistoryPanel />}
           </div>
         </aside>
 
@@ -123,6 +163,7 @@ function EditorPage() {
           <div className="min-h-0 flex-1">
             <Canvas preview={preview} />
           </div>
+          {preview && <LogPanel />}
         </main>
 
         {/* Right */}

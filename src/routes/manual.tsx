@@ -99,12 +99,28 @@ function Manual() {
 
         <h2>7. Salvar, abrir e exportar</h2>
         <ul>
-          <li>Tudo é salvo automaticamente no seu navegador (localStorage).</li>
+          <li><b>Autosave:</b> toda alteração no canvas, nos scripts e nos arquivos é salva na hora no navegador — a barra superior mostra o horário do último salvamento.</li>
+          <li><b>Histórico:</b> aba <i>Histórico</i> no painel esquerdo lista os últimos 50 pontos de alteração; clique em um deles para restaurar. Também há <i>Desfazer</i>/<i>Refazer</i> na barra superior.</li>
           <li><b>Salvar/Exportar</b> baixa um arquivo <code>projeto-nocode.json</code> com <i>todo</i> o projeto (páginas, componentes e scripts).</li>
+          <li><b>Baixar ZIP</b> gera um pacote com <code>pages/*.html</code>, <code>components/*.tsx</code>, <code>scripts/*.js</code>, o JSON do projeto e um LEIA-ME — ideal para compartilhar.</li>
           <li><b>Importar</b> carrega um <code>.json</code> exportado anteriormente, substituindo o projeto atual.</li>
         </ul>
 
-        <h2>8. Gravando no GitHub</h2>
+        <h2>8. Painel de logs no Preview</h2>
+        <ul>
+          <li>Ao ativar o <b>Preview</b>, um painel de logs aparece abaixo do canvas.</li>
+          <li>Cada evento registra: método/URL e status HTTP das requisições, nome da função executada, tempo de execução e mensagens de erro.</li>
+          <li>Use <i>Limpar</i> para zerar a lista.</li>
+        </ul>
+
+        <h2>9. Organizando scripts</h2>
+        <ul>
+          <li>Na aba <i>Arquivos</i>, use <kbd>+</kbd> em <b>Scripts</b> para criar quantos arquivos quiser.</li>
+          <li>O ícone de lápis renomeia o arquivo (Enter confirma, Esc cancela) e o campo de filtro localiza arquivos por nome.</li>
+          <li>No painel <i>Eventos</i>, escolha o script e depois a função exata que o evento deve chamar.</li>
+        </ul>
+
+        <h2>10. Gravando no GitHub</h2>
         <p>Este editor roda dentro do Lovable, que oferece sincronização bidirecional com GitHub:</p>
         <ol>
           <li>Na barra do Lovable, abra o menu <kbd>+</kbd> → <b>GitHub</b> → <b>Connect project</b>.</li>

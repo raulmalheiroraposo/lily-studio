@@ -60,6 +60,9 @@ function defaultBlockFor(kind: BlockKind): Block {
 }
 
 type Actions = {
+  undo: () => void;
+  redo: () => void;
+  restoreHistory: (index: number) => void;
   createFile: (type: ProjectFile["type"], name?: string) => string;
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
@@ -76,16 +79,80 @@ type Actions = {
   resetProject: () => void;
 };
 
+export type HistoryEntry = { label: string; at: number; files: ProjectFile[] };
+
+type Extra = {
+  past: HistoryEntry[];
+  future: HistoryEntry[];
+  lastSavedAt: number | null;
+};
+
 const initial: ProjectState = {
   files: [],
   activeFileId: null,
   selectedBlockId: null,
 };
 
-export const useProject = create<ProjectState & Actions>()(
+const initialExtra: Extra = { past: [], future: [], lastSavedAt: null };
+
+export const useProject = create<ProjectState & Extra & Actions>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      /** Applies a mutation while recording the previous file tree in history. */
+      const track = (
+        label: string,
+        producer: (s: ProjectState & Extra) => Partial<ProjectState>
+      ) =>
+        set((s) => ({
+          ...producer(s),
+          past: [...s.past, { label, at: Date.now(), files: s.files }].slice(-50),
+          future: [],
+          lastSavedAt: Date.now(),
+        }));
+
+      return {
       ...initial,
+      ...initialExtra,
+
+      undo: () =>
+        set((s) => {
+          const prev = s.past[s.past.length - 1];
+          if (!prev) return s;
+          return {
+            files: prev.files,
+            past: s.past.slice(0, -1),
+            future: [{ label: prev.label, at: Date.now(), files: s.files }, ...s.future].slice(0, 50),
+            selectedBlockId: null,
+            lastSavedAt: Date.now(),
+          };
+        }),
+      redo: () =>
+        set((s) => {
+          const next = s.future[0];
+          if (!next) return s;
+          return {
+            files: next.files,
+            past: [...s.past, { label: next.label, at: Date.now(), files: s.files }].slice(-50),
+            future: s.future.slice(1),
+            selectedBlockId: null,
+            lastSavedAt: Date.now(),
+          };
+        }),
+      restoreHistory: (index) =>
+        set((s) => {
+          const target = s.past[index];
+          if (!target) return s;
+          return {
+            files: target.files,
+            past: s.past.slice(0, index),
+            future: [
+              ...s.past.slice(index).map((h) => ({ ...h })).reverse(),
+              ...s.future,
+            ].slice(0, 50),
+            selectedBlockId: null,
+            lastSavedAt: Date.now(),
+          };
+        }),
 
       createFile: (type, name) => {
         const id = uid();
@@ -106,19 +173,23 @@ export const useProject = create<ProjectState & Actions>()(
                   "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
             : { id, name: defaultName, type, blocks: [] };
-        set((s) => ({ files: [...s.files, file], activeFileId: id }));
+        track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
       },
       deleteFile: (id) =>
-        set((s) => ({
+        track("Excluiu arquivo", (s) => ({
           files: s.files.filter((f) => f.id !== id),
           activeFileId: s.activeFileId === id ? null : s.activeFileId,
         })),
       renameFile: (id, name) =>
-        set((s) => ({ files: s.files.map((f) => (f.id === id ? { ...f, name } : f)) })),
+        track(`Renomeou para ${name}`, (s) => ({
+          files: s.files.map((f) => (f.id === id ? { ...f, name } : f)),
+        })),
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
       updateFileCode: (id, code) =>
-        set((s) => ({ files: s.files.map((f) => (f.id === id ? { ...f, code } : f)) })),
+        track("Editou código", (s) => ({
+          files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+        })),
 
       addBlock: (kind) => {
         const { activeFileId, files } = get();
@@ -126,7 +197,7 @@ export const useProject = create<ProjectState & Actions>()(
         const file = files.find((f) => f.id === activeFileId);
         if (!file || file.type === "script") return;
         const block = defaultBlockFor(kind);
-        set((s) => ({
+        track(`Adicionou ${kind}`, (s) => ({
           files: s.files.map((f) =>
             f.id === activeFileId ? { ...f, blocks: [...(f.blocks ?? []), block] } : f
           ),
@@ -134,7 +205,7 @@ export const useProject = create<ProjectState & Actions>()(
         }));
       },
       updateBlock: (id, patch) =>
-        set((s) => ({
+        track("Alterou componente", (s) => ({
           files: s.files.map((f) =>
             f.blocks
               ? { ...f, blocks: f.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) }
@@ -142,7 +213,7 @@ export const useProject = create<ProjectState & Actions>()(
           ),
         })),
       removeBlock: (id) =>
-        set((s) => ({
+        track("Removeu componente", (s) => ({
           files: s.files.map((f) =>
             f.blocks ? { ...f, blocks: f.blocks.filter((b) => b.id !== id) } : f
           ),
@@ -151,7 +222,7 @@ export const useProject = create<ProjectState & Actions>()(
       selectBlock: (id) => set({ selectedBlockId: id }),
 
       addEvent: (blockId, binding) =>
-        set((s) => ({
+        track(`Vinculou ${binding.event}`, (s) => ({
           files: s.files.map((f) =>
             f.blocks
               ? {
@@ -164,7 +235,7 @@ export const useProject = create<ProjectState & Actions>()(
           ),
         })),
       removeEvent: (blockId, index) =>
-        set((s) => ({
+        track("Removeu evento", (s) => ({
           files: s.files.map((f) =>
             f.blocks
               ? {
@@ -179,13 +250,31 @@ export const useProject = create<ProjectState & Actions>()(
           ),
         })),
 
-      importProject: (data) => set({ ...initial, ...data }),
+      importProject: (data) =>
+        set((s) => ({
+          ...initial,
+          ...data,
+          past: [...s.past, { label: "Antes da importação", at: Date.now(), files: s.files }].slice(-50),
+          future: [],
+          lastSavedAt: Date.now(),
+        })),
       exportProject: () => {
         const { files, activeFileId, selectedBlockId } = get();
         return { files, activeFileId, selectedBlockId };
       },
-      resetProject: () => set(initial),
-    }),
-    { name: "nocode-project-v2" }
+      resetProject: () => set({ ...initial, ...initialExtra }),
+      };
+    },
+    {
+      name: "nocode-project-v2",
+      partialize: (s) => ({
+        files: s.files,
+        activeFileId: s.activeFileId,
+        selectedBlockId: s.selectedBlockId,
+        past: s.past.slice(-20),
+        future: [],
+        lastSavedAt: s.lastSavedAt,
+      }),
+    }
   )
 );

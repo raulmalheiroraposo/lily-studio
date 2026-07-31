@@ -1,4 +1,5 @@
 import type { EventBinding, ProjectFile } from "./types";
+import { logEvent } from "./log-store";
 
 function getScriptExports(code: string): Record<string, unknown> {
   try {
@@ -35,23 +36,53 @@ export async function runBinding(
 ): Promise<void> {
   try {
     if (binding.kind === "url") {
+      const started = performance.now();
+      logEvent({
+        level: "info",
+        source: binding.event,
+        message: `${binding.method} ${binding.url}`,
+      });
       const res = await fetch(binding.url, { method: binding.method });
-      console.log(`[evento] ${binding.event} → ${binding.method} ${binding.url} → ${res.status}`);
+      const ms = Math.round(performance.now() - started);
+      logEvent({
+        level: res.ok ? "success" : "error",
+        source: binding.event,
+        message: `${res.status} ${res.statusText || ""} · ${binding.method} ${binding.url}`,
+        detail: `${ms} ms`,
+      });
       return;
     }
     const script = files.find((f) => f.id === binding.scriptId && f.type === "script");
     if (!script?.code) {
-      console.warn("[evento] script não encontrado", binding);
+      logEvent({ level: "warn", source: binding.event, message: "Script não encontrado" });
       return;
     }
     const exp = getScriptExports(script.code);
     const fn = exp[binding.functionName];
     if (typeof fn !== "function") {
-      console.warn(`[evento] função ${binding.functionName} não encontrada em ${script.name}`);
+      logEvent({
+        level: "warn",
+        source: binding.event,
+        message: `Função ${binding.functionName} não encontrada em ${script.name}`,
+      });
       return;
     }
-    await (fn as (arg: unknown) => unknown)(eventArg);
+    const started = performance.now();
+    const result = await (fn as (arg: unknown) => unknown)(eventArg);
+    logEvent({
+      level: "success",
+      source: binding.event,
+      message: `${script.name} :: ${binding.functionName}()`,
+      detail:
+        `${Math.round(performance.now() - started)} ms` +
+        (result === undefined ? "" : ` · retorno: ${String(result).slice(0, 120)}`),
+    });
   } catch (err) {
-    console.error("[evento] erro:", err);
+    logEvent({
+      level: "error",
+      source: binding.event,
+      message: err instanceof Error ? err.message : String(err),
+      detail: err instanceof Error ? err.stack?.split("\n").slice(0, 3).join("\n") : undefined,
+    });
   }
 }
