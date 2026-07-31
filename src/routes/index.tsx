@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2 } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
@@ -25,6 +25,8 @@ function EditorPage() {
   const undo = useProject((s) => s.undo);
   const redo = useProject((s) => s.redo);
   const lastSavedAt = useProject((s) => s.lastSavedAt);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const doExport = () => {
     const data = JSON.stringify(exportProject(), null, 2);
@@ -67,7 +69,7 @@ function EditorPage() {
             </div>
           )}
           <span className="text-[11px] text-muted-foreground">
-            {lastSavedAt
+            {mounted && lastSavedAt
               ? `salvo ${new Date(lastSavedAt).toLocaleTimeString("pt-BR")}`
               : "autosave ativo"}
           </span>
