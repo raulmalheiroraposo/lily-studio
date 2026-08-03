@@ -404,10 +404,18 @@ export function PropertiesPanel() {
       <CodeEditorModal
         open={codeOpen}
         title={`Código de ${block.kind}`}
-        value={block.code ?? ""}
+        value={
+          (block.sourceFileId
+            ? components.find((c) => c.id === block.sourceFileId)?.code
+            : block.code) ?? ""
+        }
         lang="typescript"
         onClose={() => setCodeOpen(false)}
-        onSave={(v) => updateBlock(block.id, { code: v })}
+        onSave={(v) =>
+          block.sourceFileId
+            ? updateFileCode(block.sourceFileId, v)
+            : updateBlock(block.id, { code: v })
+        }
       />
     </div>
   );
