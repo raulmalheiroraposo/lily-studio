@@ -88,6 +88,11 @@ export function FileTree() {
                     active ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/50"
                   }`}
                   onClick={() => setActiveFile(f.id)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setEditing({ id: f.id, name: f.name });
+                  }}
+                  title="Clique para abrir, duplo clique para renomear"
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="flex-1 truncate">{f.name}</span>
