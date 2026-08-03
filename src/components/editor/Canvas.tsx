@@ -7,6 +7,7 @@ import { CodeEditorModal } from "./CodeEditorModal";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { runBinding } from "@/lib/script-runtime";
+import { ReactBlock } from "@/components/blocks/ReactBlock";
 
 export function Canvas({ preview }: { preview: boolean }) {
   const activeFile = useProject((s) =>
@@ -19,6 +20,14 @@ export function Canvas({ preview }: { preview: boolean }) {
   const removeBlock = useProject((s) => s.removeBlock);
   const updateFileCode = useProject((s) => s.updateFileCode);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
+
+  const resolveCode = useCallback(
+    (block: { code?: string; sourceFileId?: string }) =>
+      block.sourceFileId
+        ? files.find((f) => f.id === block.sourceFileId)?.code ?? ""
+        : block.code ?? "",
+    [files]
+  );
 
   const buildHandlers = useCallback(
     (block: { events: { event: string }[] }) => {
@@ -39,6 +48,39 @@ export function Canvas({ preview }: { preview: boolean }) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
         Selecione ou crie um arquivo na aba de arquivos à esquerda.
+      </div>
+    );
+  }
+  if (activeFile.type === "component" && typeof activeFile.code === "string") {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between border-b border-border bg-[color:var(--panel)] px-3 py-2 text-xs">
+          <div className="font-semibold">
+            Componente React:&nbsp;<span className="font-mono text-primary">{activeFile.name}</span>
+          </div>
+          <div className="text-muted-foreground">
+            Use <code>export default function</code> — o preview ao lado atualiza em tempo real.
+          </div>
+        </div>
+        <div className="flex min-h-0 flex-1">
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto border-r border-border">
+            <CodeMirror
+              value={activeFile.code ?? ""}
+              height="100%"
+              theme="dark"
+              extensions={[javascript({ jsx: true, typescript: true })]}
+              onChange={(v) => updateFileCode(activeFile.id, v)}
+              basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: true }}
+              style={{ height: "100%", fontSize: 13 }}
+            />
+          </div>
+          <div className="min-h-0 w-1/2 overflow-auto bg-background p-3">
+            <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Preview ao vivo
+            </div>
+            <ReactBlock code={activeFile.code ?? ""} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -87,7 +129,7 @@ export function Canvas({ preview }: { preview: boolean }) {
                   height: block.h,
                 }}
               >
-                <BlockRenderer block={block} eventHandlers={buildHandlers(block)} />
+                <BlockRenderer block={block} eventHandlers={buildHandlers(block)} resolvedCode={resolveCode(block)} />
               </div>
             ))
           : activeFile.blocks?.map((block) => {
@@ -114,7 +156,7 @@ export function Canvas({ preview }: { preview: boolean }) {
               className={selected ? "outline outline-2 outline-primary" : "outline outline-1 outline-transparent hover:outline-primary/40"}
             >
               <div className="relative h-full w-full">
-                <BlockRenderer block={block} />
+                <BlockRenderer block={block} resolvedCode={resolveCode(block)} />
                 {selected && (
                   <div className="absolute -top-8 left-0 flex items-center gap-1 rounded-md border border-border bg-card px-1.5 py-1 text-xs shadow">
                     <span className="px-1 text-[10px] uppercase text-muted-foreground">{block.kind}</span>
@@ -122,7 +164,7 @@ export function Canvas({ preview }: { preview: boolean }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCodeModal({ id: block.id, code: block.code ?? "" });
+                          setCodeModal({ id: block.id, code: resolveCode(block) });
                         }}
                         title="Editar código"
                         className="rounded p-1 hover:bg-accent"
@@ -160,7 +202,10 @@ export function Canvas({ preview }: { preview: boolean }) {
         lang="typescript"
         onClose={() => setCodeModal(null)}
         onSave={(v) => {
-          if (codeModal) updateBlock(codeModal.id, { code: v });
+          if (!codeModal) return;
+          const target = activeFile.blocks?.find((b) => b.id === codeModal.id);
+          if (target?.sourceFileId) updateFileCode(target.sourceFileId, v);
+          else updateBlock(codeModal.id, { code: v });
         }}
       />
     </div>
