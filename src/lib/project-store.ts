@@ -172,6 +172,8 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                 code:
                   "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
+            : type === "component"
+            ? { id, name: defaultName, type, blocks: [], code: defaultComponentCode }
             : { id, name: defaultName, type, blocks: [] };
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
