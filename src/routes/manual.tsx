@@ -98,6 +98,16 @@ function Manual() {
         </ul>
 
         <h2>7. Salvar, abrir e exportar</h2>
+        <h2>6.1 Componentes React funcionais</h2>
+        <p>O código dos blocos React é compilado no navegador (JSX/TSX) e <b>executa de verdade</b> no canvas, no Preview e no site publicado — inclusive com hooks (<code>useState</code>, <code>useEffect</code>, <code>useMemo</code>, <code>useRef</code>, <code>useCallback</code>) já disponíveis no escopo. Use <code>export default function ...</code> (ou apenas o corpo com <code>return (...)</code>).</p>
+        <ul>
+          <li><b>Arquivo de componente</b>: em <i>Arquivos → Componentes React → +</i> um arquivo <code>.tsx</code> é criado e abre com editor + preview ao vivo lado a lado.</li>
+          <li><b>Vincular</b>: selecione um bloco React no canvas e escolha o arquivo em <i>Props → Arquivo de componente React</i>. O bloco passa a renderizar o código daquele arquivo.</li>
+          <li><b>Abrir</b>: <i>Abrir arquivo .tsx</i> importa um arquivo do seu computador como novo componente do projeto.</li>
+          <li><b>Salvar</b>: <i>Baixar como .tsx</i> exporta o código; <i>Salvar como arquivo do projeto</i> converte o código embutido do bloco em arquivo reutilizável.</li>
+          <li>Erros de compilação/execução aparecem dentro do próprio bloco, sem quebrar o editor.</li>
+        </ul>
+
         <ul>
           <li><b>Autosave:</b> toda alteração no canvas, nos scripts e nos arquivos é salva na hora no navegador — a barra superior mostra o horário do último salvamento.</li>
           <li><b>Histórico:</b> aba <i>Histórico</i> no painel esquerdo lista os últimos 50 pontos de alteração; clique em um deles para restaurar. Também há <i>Desfazer</i>/<i>Refazer</i> na barra superior.</li>
