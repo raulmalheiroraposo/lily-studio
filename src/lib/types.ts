@@ -41,6 +41,8 @@ export type Block = {
   text?: string;
   events: EventBinding[];
   code?: string; // JSX code for kind === "react"
+  /** When set, kind === "react" reads/writes its code from this component file. */
+  sourceFileId?: string;
 };
 
 export type ProjectFile = {

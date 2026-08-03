@@ -81,6 +81,7 @@ ${bindings}
 }
 
 function componentToTsx(file: ProjectFile) {
+  if (typeof file.code === "string" && file.code.trim()) return file.code;
   const name = file.name.replace(/\.[jt]sx?$/, "").replace(/[^A-Za-z0-9_]/g, "") || "Componente";
   const blocks = (file.blocks ?? [])
     .map(

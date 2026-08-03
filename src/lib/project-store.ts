@@ -9,6 +9,18 @@ import type {
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+export const defaultComponentCode = `export default function Componente() {
+  const [contador, setContador] = useState(0);
+  return (
+    <div style={{ padding: 16, fontFamily: "system-ui" }}>
+      <h3 style={{ margin: 0 }}>Componente React</h3>
+      <p>Cliques: {contador}</p>
+      <button onClick={() => setContador(contador + 1)}>Clique</button>
+    </div>
+  );
+}
+`;
+
 function defaultBlockFor(kind: BlockKind): Block {
   const base: Block = {
     id: uid(),
@@ -172,6 +184,8 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                 code:
                   "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
+            : type === "component"
+            ? { id, name: defaultName, type, blocks: [], code: defaultComponentCode }
             : { id, name: defaultName, type, blocks: [] };
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;

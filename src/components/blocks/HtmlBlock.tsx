@@ -5,9 +5,11 @@ import { ReactBlock } from "./ReactBlock";
 export function BlockRenderer({
   block,
   eventHandlers,
+  resolvedCode,
 }: {
   block: Block;
   eventHandlers?: Record<string, (e: unknown) => void>;
+  resolvedCode?: string;
 }) {
   const style: React.CSSProperties = {
     width: "100%",
@@ -92,7 +94,7 @@ export function BlockRenderer({
         </div>
       );
     case "react":
-      return <ReactBlock code={block.code ?? ""} />;
+      return <ReactBlock code={resolvedCode ?? block.code ?? ""} eventHandlers={handlers} />;
     case "section":
     case "div":
     default:
