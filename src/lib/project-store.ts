@@ -9,6 +9,18 @@ import type {
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+export const defaultComponentCode = `export default function Componente() {
+  const [contador, setContador] = useState(0);
+  return (
+    <div style={{ padding: 16, fontFamily: "system-ui" }}>
+      <h3 style={{ margin: 0 }}>Componente React</h3>
+      <p>Cliques: {contador}</p>
+      <button onClick={() => setContador(contador + 1)}>Clique</button>
+    </div>
+  );
+}
+`;
+
 function defaultBlockFor(kind: BlockKind): Block {
   const base: Block = {
     id: uid(),
