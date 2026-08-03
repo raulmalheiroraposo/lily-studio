@@ -41,10 +41,7 @@ export async function compileComponent(source: string): Promise<CompiledComponen
   const withoutImports = wrap(source).replace(/^\s*import\s[^\n]*\n?/gm, "");
   const out = Babel.transform(withoutImports, {
     filename: "component.tsx",
-    presets: [
-      ["react", { runtime: "classic" }],
-      ["typescript", { isTSX: true, allExtensions: true }],
-    ],
+    presets: [["react", { runtime: "classic" }], "typescript"],
     plugins: ["transform-modules-commonjs"],
     sourceType: "module",
   });
