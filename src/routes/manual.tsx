@@ -97,7 +97,6 @@ function Manual() {
           <li>Alterações salvas automaticamente no projeto.</li>
         </ul>
 
-        <h2>7. Salvar, abrir e exportar</h2>
         <h2>6.1 Componentes React funcionais</h2>
         <p>O código dos blocos React é compilado no navegador (JSX/TSX) e <b>executa de verdade</b> no canvas, no Preview e no site publicado — inclusive com hooks (<code>useState</code>, <code>useEffect</code>, <code>useMemo</code>, <code>useRef</code>, <code>useCallback</code>) já disponíveis no escopo. Use <code>export default function ...</code> (ou apenas o corpo com <code>return (...)</code>).</p>
         <ul>
@@ -108,6 +107,7 @@ function Manual() {
           <li>Erros de compilação/execução aparecem dentro do próprio bloco, sem quebrar o editor.</li>
         </ul>
 
+        <h2>7. Salvar, abrir e exportar</h2>
         <ul>
           <li><b>Autosave:</b> toda alteração no canvas, nos scripts e nos arquivos é salva na hora no navegador — a barra superior mostra o horário do último salvamento.</li>
           <li><b>Histórico:</b> aba <i>Histórico</i> no painel esquerdo lista os últimos 50 pontos de alteração; clique em um deles para restaurar. Também há <i>Desfazer</i>/<i>Refazer</i> na barra superior.</li>
