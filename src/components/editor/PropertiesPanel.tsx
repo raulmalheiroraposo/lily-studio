@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Trash2, Plus, Code2 } from "lucide-react";
-import { useProject } from "@/lib/project-store";
+import { Trash2, Plus, Code2, FolderOpen, Save } from "lucide-react";
+import { useProject, defaultComponentCode } from "@/lib/project-store";
 import { CodeEditorModal } from "./CodeEditorModal";
 import { listScriptFunctions } from "@/lib/script-runtime";
 import type { EventBinding } from "@/lib/types";
@@ -15,7 +15,11 @@ export function PropertiesPanel() {
   });
   const allFiles = useProject((s) => s.files);
   const scripts = useMemo(() => allFiles.filter((f) => f.type === "script"), [allFiles]);
+  const components = useMemo(() => allFiles.filter((f) => f.type === "component"), [allFiles]);
   const updateBlock = useProject((s) => s.updateBlock);
+  const updateFileCode = useProject((s) => s.updateFileCode);
+  const createFile = useProject((s) => s.createFile);
+  const renameFile = useProject((s) => s.renameFile);
   const addEvent = useProject((s) => s.addEvent);
   const removeEvent = useProject((s) => s.removeEvent);
 
@@ -105,12 +109,79 @@ export function PropertiesPanel() {
               </div>
             </Field>
             {block.kind === "react" && (
-              <button
-                onClick={() => setCodeOpen(true)}
-                className="flex w-full items-center justify-center gap-1.5 rounded border border-primary bg-primary/10 py-2 text-xs font-medium text-primary hover:bg-primary/20"
-              >
-                <Code2 className="h-3.5 w-3.5" /> Editar código-fonte
-              </button>
+              <div className="space-y-2 rounded border border-primary/40 bg-primary/5 p-2">
+                <Field label="Arquivo de componente React">
+                  <select
+                    value={block.sourceFileId ?? ""}
+                    onChange={(e) =>
+                      updateBlock(block.id, { sourceFileId: e.target.value || undefined })
+                    }
+                    className="w-full rounded border border-border bg-input px-2 py-1"
+                  >
+                    <option value="">(código embutido no bloco)</option>
+                    {components.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <button
+                  onClick={() => setCodeOpen(true)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-primary bg-primary/10 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+                >
+                  <Code2 className="h-3.5 w-3.5" /> Editar código-fonte
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = ".tsx,.jsx,.ts,.js,text/plain";
+                    input.onchange = async () => {
+                      const f = input.files?.[0];
+                      if (!f) return;
+                      const code = await f.text();
+                      const id = createFile("component", f.name);
+                      updateFileCode(id, code);
+                      updateBlock(block.id, { sourceFileId: id });
+                    };
+                    input.click();
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-border py-1.5 hover:bg-accent"
+                >
+                  <FolderOpen className="h-3.5 w-3.5" /> Abrir arquivo .tsx
+                </button>
+                <button
+                  onClick={() => {
+                    const linked = components.find((c) => c.id === block.sourceFileId);
+                    const code = linked?.code ?? block.code ?? defaultComponentCode;
+                    const name = linked?.name ?? `Componente-${block.id}.tsx`;
+                    const blob = new Blob([code], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = name.endsWith(".tsx") ? name : `${name}.tsx`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-border py-1.5 hover:bg-accent"
+                >
+                  <Save className="h-3.5 w-3.5" /> Baixar como .tsx
+                </button>
+                {!block.sourceFileId && (
+                  <button
+                    onClick={() => {
+                      const id = createFile("component");
+                      updateFileCode(id, block.code ?? defaultComponentCode);
+                      renameFile(id, `Componente-${block.id}.tsx`);
+                      updateBlock(block.id, { sourceFileId: id });
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded border border-border py-1.5 hover:bg-accent"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Salvar como arquivo do projeto
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}
