@@ -11,6 +11,24 @@ import { exportProjectZip } from "@/lib/export-zip";
 import { useProject } from "@/lib/project-store";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "FluxoStudio — Editor visual no-code React" },
+      {
+        name: "description",
+        content:
+          "Monte páginas HTML e componentes React arrastando blocos, edite propriedades, atributos, eventos e scripts com realce de sintaxe.",
+      },
+      { property: "og:title", content: "FluxoStudio — Editor visual no-code React" },
+      {
+        property: "og:description",
+        content:
+          "Editor visual no-code: canvas com blocos redimensionáveis, componentes React ao vivo, scripts e eventos.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: EditorPage,
 });
 
