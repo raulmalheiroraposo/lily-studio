@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SiteRouteImport } from './routes/site'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SiteRoute = SiteRouteImport.update({
+  id: '/site',
+  path: '/site',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManualRoute = ManualRouteImport.update({
   id: '/manual',
   path: '/manual',
@@ -26,31 +32,42 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/manual': typeof ManualRoute
+  '/site': typeof SiteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/manual': typeof ManualRoute
+  '/site': typeof SiteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/manual': typeof ManualRoute
+  '/site': typeof SiteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/manual'
+  fullPaths: '/' | '/manual' | '/site'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/manual'
-  id: '__root__' | '/' | '/manual'
+  to: '/' | '/manual' | '/site'
+  id: '__root__' | '/' | '/manual' | '/site'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ManualRoute: typeof ManualRoute
+  SiteRoute: typeof SiteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/site': {
+      id: '/site'
+      path: '/site'
+      fullPath: '/site'
+      preLoaderRoute: typeof SiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manual': {
       id: '/manual'
       path: '/manual'
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ManualRoute: ManualRoute,
+  SiteRoute: SiteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
