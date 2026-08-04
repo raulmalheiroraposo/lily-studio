@@ -77,13 +77,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FluxoStudio — Plataforma No-Code Visual" },
-      { name: "description", content: "Editor visual no-code com paleta de componentes HTML/CSS/gráficos, editor de propriedades e eventos, e fluxos de ação com fluxograma editável." },
+      { title: "FluxoStudio — Editor visual no-code React" },
+      { name: "description", content: "Monte páginas HTML e componentes React arrastando blocos, edite propriedades, atributos, eventos e scripts com realce de sintaxe." },
       { name: "author", content: "FluxoStudio" },
-      { property: "og:title", content: "FluxoStudio — Plataforma No-Code Visual" },
-      { property: "og:description", content: "Construa páginas, componentes React e fluxos de ação com um editor visual completo." },
+      { property: "og:title", content: "FluxoStudio — Editor visual no-code React" },
+      { property: "og:description", content: "Monte páginas HTML e componentes React arrastando blocos, edite propriedades, atributos, eventos e scripts com realce de sintaxe." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "FluxoStudio — Editor visual no-code React" },
+      { name: "twitter:description", content: "Monte páginas HTML e componentes React arrastando blocos, edite propriedades, atributos, eventos e scripts com realce de sintaxe." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2ed32a28-cfbc-457d-a582-24b609ccb144/id-preview-594fbbc4--3c28a2e9-57e4-42e3-87a8-3208dfa18e75.lovable.app-1785856982278.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2ed32a28-cfbc-457d-a582-24b609ccb144/id-preview-594fbbc4--3c28a2e9-57e4-42e3-87a8-3208dfa18e75.lovable.app-1785856982278.png" },
     ],
     links: [
       {
