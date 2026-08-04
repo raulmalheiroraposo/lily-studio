@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2 } from "lucide-react";
+import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
 import { Canvas } from "@/components/editor/Canvas";
@@ -136,6 +136,14 @@ function EditorPage() {
           >
             <FileArchive className="h-3 w-3" /> Baixar ZIP
           </button>
+          <a
+            href="/site"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
+          >
+            <ExternalLink className="h-3 w-3" /> Abrir site
+          </a>
           <Link
             to="/manual"
             className="flex items-center gap-1 rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
