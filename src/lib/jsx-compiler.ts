@@ -1,6 +1,7 @@
 /**
  * Compiles user-authored JSX/TSX source into a live React component,
- * entirely in the browser (Babel standalone, lazily loaded).
+ * entirely in the browser (Babel standalone, loaded from CDN at runtime so it
+ * never enters the server/SSR bundle).
  */
 import * as React from "react";
 
@@ -11,9 +12,27 @@ type BabelModule = {
   ) => { code?: string | null };
 };
 
+const BABEL_CDN_URL = "https://unpkg.com/@babel/standalone@7.28.4/babel.min.js";
+
 let babelPromise: Promise<BabelModule> | null = null;
 async function getBabel(): Promise<BabelModule> {
-  babelPromise ??= import("@babel/standalone") as unknown as Promise<BabelModule>;
+  if (typeof window === "undefined") {
+    throw new Error("A compilação de componentes React só acontece no navegador.");
+  }
+  babelPromise ??= new Promise<BabelModule>((resolve, reject) => {
+    const existing = (window as unknown as { Babel?: BabelModule }).Babel;
+    if (existing) return resolve(existing);
+    const script = document.createElement("script");
+    script.src = BABEL_CDN_URL;
+    script.async = true;
+    script.onload = () => {
+      const Babel = (window as unknown as { Babel?: BabelModule }).Babel;
+      if (Babel) resolve(Babel);
+      else reject(new Error("Não foi possível carregar o compilador Babel."));
+    };
+    script.onerror = () => reject(new Error("Falha ao carregar o compilador Babel (offline?)."));
+    document.head.appendChild(script);
+  });
   return babelPromise;
 }
 
