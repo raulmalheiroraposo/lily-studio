@@ -1,13 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink } from "lucide-react";
+import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink, Code2 } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
 import { Canvas } from "@/components/editor/Canvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
 import { HistoryPanel } from "@/components/editor/HistoryPanel";
 import { LogPanel } from "@/components/editor/LogPanel";
+import { CodeEditorModal } from "@/components/editor/CodeEditorModal";
 import { exportProjectZip } from "@/lib/export-zip";
+import { buildPageHtml } from "@/lib/site-builder";
+import { parsePageHtml } from "@/lib/html-importer";
 import { useProject } from "@/lib/project-store";
 
 export const Route = createFileRoute("/")({
@@ -35,9 +38,13 @@ export const Route = createFileRoute("/")({
 function EditorPage() {
   const [leftTab, setLeftTab] = useState<"palette" | "files" | "history">("files");
   const [preview, setPreview] = useState(false);
+  const [htmlOpen, setHtmlOpen] = useState(false);
+  const files = useProject((s) => s.files);
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
+  const updateBlock = useProject((s) => s.updateBlock);
+  const removeBlock = useProject((s) => s.removeBlock);
   const exportProject = useProject((s) => s.exportProject);
   const importProject = useProject((s) => s.importProject);
   const undo = useProject((s) => s.undo);
@@ -69,6 +76,17 @@ function EditorPage() {
     input.click();
   };
   const doExportZip = () => void exportProjectZip(exportProject());
+
+  const pages = files.filter((f) => f.type === "page");
+  const activePage = activeFile?.type === "page" ? activeFile : null;
+  const pageHtml = activePage ? buildPageHtml(activePage, files, { pages, vendorLocal: false }) : "";
+
+  const saveHtml = (source: string) => {
+    if (!activePage) return;
+    const { patches, removedIds } = parsePageHtml(source, activePage.blocks ?? []);
+    for (const [id, patch] of Object.entries(patches)) updateBlock(id, patch);
+    for (const id of removedIds) removeBlock(id);
+  };
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
@@ -136,6 +154,15 @@ function EditorPage() {
           >
             <FileArchive className="h-3 w-3" /> Baixar ZIP
           </button>
+          {activePage && (
+            <button
+              onClick={() => setHtmlOpen(true)}
+              title="Editar o código HTML da página ativa"
+              className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
+            >
+              <Code2 className="h-3 w-3" /> Código HTML
+            </button>
+          )}
           <a
             href="/site"
             target="_blank"
@@ -197,6 +224,15 @@ function EditorPage() {
           <PropertiesPanel />
         </aside>
       </div>
+
+      <CodeEditorModal
+        open={htmlOpen}
+        title={`Código HTML — ${activePage?.name ?? ""}`}
+        value={pageHtml}
+        lang="html"
+        onClose={() => setHtmlOpen(false)}
+        onSave={saveHtml}
+      />
     </div>
   );
 }
