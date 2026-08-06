@@ -93,6 +93,66 @@ type Actions = {
 
 export type HistoryEntry = { label: string; at: number; files: ProjectFile[] };
 
+/** Deterministic starter project so the editor never opens empty. */
+function starterFiles(): ProjectFile[] {
+  const block = (b: Partial<Block> & { id: string; kind: BlockKind }): Block => ({
+    ...defaultBlockFor(b.kind),
+    ...b,
+  });
+  return [
+    {
+      id: "seed-script",
+      name: "acoes.js",
+      type: "script",
+      code:
+        "// Funções disponíveis para os eventos dos componentes.\nfunction saudacao() {\n  alert('Olá do FluxoStudio!');\n}\n\nfunction logarAgora() {\n  console.log('Clique em', new Date().toLocaleTimeString('pt-BR'));\n}\n",
+    },
+    {
+      id: "seed-component",
+      name: "Contador.tsx",
+      type: "component",
+      blocks: [],
+      code: defaultComponentCode,
+    },
+    {
+      id: "seed-page",
+      name: "pagina-1.html",
+      type: "page",
+      blocks: [
+        block({ id: "seed-b1", kind: "heading", x: 40, y: 32, w: 520, text: "Bem-vindo ao FluxoStudio" }),
+        block({
+          id: "seed-b2",
+          kind: "paragraph",
+          x: 40,
+          y: 100,
+          w: 520,
+          text: "Arraste componentes da paleta, edite propriedades, atributos e eventos à direita.",
+        }),
+        block({
+          id: "seed-b3",
+          kind: "button",
+          x: 40,
+          y: 196,
+          text: "Clique aqui",
+          events: [
+            { event: "onClick", kind: "function", scriptId: "seed-script", functionName: "saudacao" },
+          ],
+        }),
+        block({
+          id: "seed-b4",
+          kind: "react",
+          x: 220,
+          y: 196,
+          w: 320,
+          h: 180,
+          sourceFileId: "seed-component",
+        }),
+        block({ id: "seed-b5", kind: "chart-bar", x: 40, y: 400 }),
+      ],
+    },
+  ];
+}
+
 type Extra = {
   past: HistoryEntry[];
   future: HistoryEntry[];
@@ -100,8 +160,8 @@ type Extra = {
 };
 
 const initial: ProjectState = {
-  files: [],
-  activeFileId: null,
+  files: starterFiles(),
+  activeFileId: "seed-page",
   selectedBlockId: null,
 };
 
