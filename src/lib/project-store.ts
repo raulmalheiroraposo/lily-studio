@@ -100,8 +100,8 @@ type Extra = {
 };
 
 const initial: ProjectState = {
-  files: [],
-  activeFileId: null,
+  files: starterFiles(),
+  activeFileId: "seed-page",
   selectedBlockId: null,
 };
 
