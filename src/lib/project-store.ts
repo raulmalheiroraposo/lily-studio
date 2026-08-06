@@ -80,6 +80,8 @@ type Actions = {
   renameFile: (id: string, name: string) => void;
   setActiveFile: (id: string | null) => void;
   updateFileCode: (id: string, code: string) => void;
+  /** Writes generated code without polluting the undo history. */
+  setGeneratedCode: (id: string, code: string) => void;
   addBlock: (kind: BlockKind) => void;
   updateBlock: (id: string, patch: Partial<Block>) => void;
   removeBlock: (id: string) => void;
@@ -262,6 +264,10 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
       updateFileCode: (id, code) =>
         track("Editou código", (s) => ({
+          files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+        })),
+      setGeneratedCode: (id, code) =>
+        set((s) => ({
           files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
         })),
 
