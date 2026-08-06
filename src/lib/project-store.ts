@@ -266,6 +266,10 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         track("Editou código", (s) => ({
           files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
         })),
+      setGeneratedCode: (id, code) =>
+        set((s) => ({
+          files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+        })),
 
       addBlock: (kind) => {
         const { activeFileId, files } = get();
