@@ -11,6 +11,7 @@ import { ReactBlock } from "@/components/blocks/ReactBlock";
 import { blocksToTsx } from "@/lib/tsx-generator";
 import { parseComponentTsx } from "@/lib/tsx-importer";
 import type { Block } from "@/lib/types";
+import { snapRect, snapResize, type Guides } from "@/lib/snap";
 
 export function Canvas({ preview }: { preview: boolean }) {
   const activeFile = useProject((s) =>
@@ -26,6 +27,23 @@ export function Canvas({ preview }: { preview: boolean }) {
   const setBlocks = useProject((s) => s.setBlocks);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
   const [tsxOpen, setTsxOpen] = useState(false);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const [surfaceSize, setSurfaceSize] = useState({ w: 1100, h: 900 });
+  const [guides, setGuides] = useState<Guides | null>(null);
+  const [live, setLive] = useState<{ id: string; x: number; y: number; w: number; h: number } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const el = surfaceRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      setSurfaceSize({ w: el.clientWidth, h: el.clientHeight });
+    });
+    ro.observe(el);
+    setSurfaceSize({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
+  }, [activeFile?.id]);
 
   const resolveCode = useCallback(
     (block: { code?: string; sourceFileId?: string }) =>
@@ -114,7 +132,10 @@ export function Canvas({ preview }: { preview: boolean }) {
       }}
       onClick={() => !preview && selectBlock(null)}
     >
-      <div className="relative mx-auto my-8 min-h-[900px] w-[min(1100px,95%)] rounded-lg border border-border bg-background shadow-xl">
+      <div
+        ref={surfaceRef}
+        className="relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
+      >
         {preview
           ? blocks.map((block) => (
               <div
@@ -132,21 +153,65 @@ export function Canvas({ preview }: { preview: boolean }) {
             ))
           : blocks.map((block) => {
               const selected = block.id === selectedBlockId;
+              const l = live?.id === block.id ? live : null;
               return (
                 <Rnd
                   key={block.id}
-                  size={{ width: block.w, height: block.h }}
-                  position={{ x: block.x, y: block.y }}
+                  size={{ width: l?.w ?? block.w, height: l?.h ?? block.h }}
+                  position={{ x: l?.x ?? block.x, y: l?.y ?? block.y }}
                   bounds="parent"
-                  onDragStop={(_, d) => updateBlock(block.id, { x: d.x, y: d.y })}
-                  onResizeStop={(_, __, ref, ___, position) =>
-                    updateBlock(block.id, {
-                      w: parseInt(ref.style.width),
-                      h: parseInt(ref.style.height),
-                      x: position.x,
-                      y: position.y,
-                    })
-                  }
+                  onDrag={(_, d) => {
+                    const s = snapRect(
+                      { x: d.x, y: d.y, w: block.w, h: block.h },
+                      blocks,
+                      block.id,
+                      surfaceSize
+                    );
+                    setGuides(s.guides);
+                    setLive({ id: block.id, x: s.x, y: s.y, w: block.w, h: block.h });
+                  }}
+                  onDragStop={(_, d) => {
+                    const s = snapRect(
+                      { x: d.x, y: d.y, w: block.w, h: block.h },
+                      blocks,
+                      block.id,
+                      surfaceSize
+                    );
+                    setGuides(null);
+                    setLive(null);
+                    updateBlock(block.id, { x: s.x, y: s.y });
+                  }}
+                  onResize={(_, __, ref, ___, position) => {
+                    const s = snapResize(
+                      {
+                        x: position.x,
+                        y: position.y,
+                        w: parseInt(ref.style.width),
+                        h: parseInt(ref.style.height),
+                      },
+                      blocks,
+                      block.id,
+                      surfaceSize
+                    );
+                    setGuides(s.guides);
+                    setLive({ id: block.id, ...s.rect });
+                  }}
+                  onResizeStop={(_, __, ref, ___, position) => {
+                    const s = snapResize(
+                      {
+                        x: position.x,
+                        y: position.y,
+                        w: parseInt(ref.style.width),
+                        h: parseInt(ref.style.height),
+                      },
+                      blocks,
+                      block.id,
+                      surfaceSize
+                    );
+                    setGuides(null);
+                    setLive(null);
+                    updateBlock(block.id, { ...s.rect });
+                  }}
                   onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     selectBlock(block.id);
@@ -190,6 +255,24 @@ export function Canvas({ preview }: { preview: boolean }) {
                 </Rnd>
               );
             })}
+        {guides && !preview && (
+          <div className="pointer-events-none absolute inset-0 z-50">
+            {guides.x.map((x, i) => (
+              <div
+                key={`gx-${i}`}
+                className="absolute top-0 bottom-0 w-px bg-primary/80"
+                style={{ left: x }}
+              />
+            ))}
+            {guides.y.map((y, i) => (
+              <div
+                key={`gy-${i}`}
+                className="absolute right-0 left-0 h-px bg-primary/80"
+                style={{ top: y }}
+              />
+            ))}
+          </div>
+        )}
         {blocks.length === 0 && !preview && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
             Arraste componentes da paleta à esquerda para começar.
