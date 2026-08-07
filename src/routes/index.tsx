@@ -187,7 +187,7 @@ function EditorPage() {
 
       {/* Body */}
       <ResizablePanelGroup
-        direction={isMobile ? "vertical" : "horizontal"}
+        orientation={isMobile ? "vertical" : "horizontal"}
         className="min-h-0 flex-1"
       >
         {/* Left */}
@@ -226,7 +226,7 @@ function EditorPage() {
 
         {/* Center: canvas + logs */}
         <ResizablePanel defaultSize={isMobile ? 50 : 60} minSize={20}>
-          <ResizablePanelGroup direction="vertical" className="h-full">
+          <ResizablePanelGroup orientation="vertical" className="h-full">
             <ResizablePanel defaultSize={preview ? 70 : 100} minSize={20}>
               <main className="h-full min-h-0 min-w-0">
                 <Canvas preview={preview} />
