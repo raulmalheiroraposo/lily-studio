@@ -12,6 +12,12 @@ import { exportProjectZip } from "@/lib/export-zip";
 import { buildPageHtml } from "@/lib/site-builder";
 import { parsePageHtml } from "@/lib/html-importer";
 import { useProject } from "@/lib/project-store";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +57,7 @@ function EditorPage() {
   const lastSavedAt = useProject((s) => s.lastSavedAt);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const isMobile = useIsMobile();
 
   const doExport = () => {
     const data = JSON.stringify(exportProject(), null, 2);
@@ -89,8 +96,8 @@ function EditorPage() {
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
       {/* Top bar */}
-      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-[color:var(--panel)] px-3">
-        <div className="flex items-center gap-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-[color:var(--panel)] px-3 py-1.5 md:h-11 md:flex-nowrap md:py-0">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="grid h-6 w-6 place-items-center rounded bg-primary text-primary-foreground">
               <WorkflowIcon className="h-3.5 w-3.5" />
@@ -98,17 +105,17 @@ function EditorPage() {
             <span className="text-sm font-bold tracking-tight">FluxoStudio</span>
           </div>
           {activeFile && (
-            <div className="rounded border border-border bg-card px-2 py-0.5 text-xs text-muted-foreground">
+            <div className="max-w-[40vw] truncate rounded border border-border bg-card px-2 py-0.5 text-xs text-muted-foreground">
               {activeFile.name}
             </div>
           )}
-          <span className="text-[11px] text-muted-foreground">
+          <span className="hidden text-[11px] text-muted-foreground sm:inline">
             {mounted && lastSavedAt
               ? `salvo ${new Date(lastSavedAt).toLocaleTimeString("pt-BR")}`
               : "autosave ativo"}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={undo}
             title="Desfazer"
