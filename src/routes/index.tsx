@@ -12,6 +12,12 @@ import { exportProjectZip } from "@/lib/export-zip";
 import { buildPageHtml } from "@/lib/site-builder";
 import { parsePageHtml } from "@/lib/html-importer";
 import { useProject } from "@/lib/project-store";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +57,7 @@ function EditorPage() {
   const lastSavedAt = useProject((s) => s.lastSavedAt);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const isMobile = useIsMobile();
 
   const doExport = () => {
     const data = JSON.stringify(exportProject(), null, 2);
@@ -89,8 +96,8 @@ function EditorPage() {
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
       {/* Top bar */}
-      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-[color:var(--panel)] px-3">
-        <div className="flex items-center gap-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-[color:var(--panel)] px-3 py-1.5 md:h-11 md:flex-nowrap md:py-0">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="grid h-6 w-6 place-items-center rounded bg-primary text-primary-foreground">
               <WorkflowIcon className="h-3.5 w-3.5" />
@@ -98,17 +105,17 @@ function EditorPage() {
             <span className="text-sm font-bold tracking-tight">FluxoStudio</span>
           </div>
           {activeFile && (
-            <div className="rounded border border-border bg-card px-2 py-0.5 text-xs text-muted-foreground">
+            <div className="max-w-[40vw] truncate rounded border border-border bg-card px-2 py-0.5 text-xs text-muted-foreground">
               {activeFile.name}
             </div>
           )}
-          <span className="text-[11px] text-muted-foreground">
+          <span className="hidden text-[11px] text-muted-foreground sm:inline">
             {mounted && lastSavedAt
               ? `salvo ${new Date(lastSavedAt).toLocaleTimeString("pt-BR")}`
               : "autosave ativo"}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={undo}
             title="Desfazer"
@@ -179,49 +186,73 @@ function EditorPage() {
       </header>
 
       {/* Body */}
-      <div className="flex min-h-0 flex-1">
+      <ResizablePanelGroup
+        orientation={isMobile ? "vertical" : "horizontal"}
+        className="min-h-0 flex-1"
+      >
         {/* Left */}
-        <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-[color:var(--panel)]">
-          <div className="flex border-b border-border text-xs">
+        <ResizablePanel defaultSize={isMobile ? 25 : 17} minSize={10}>
+        <aside className="flex h-full min-h-0 flex-col border-border bg-[color:var(--panel)]">
+          <div className="flex shrink-0 border-b border-border text-xs">
             {(["files", "palette", "history"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setLeftTab(t)}
-                className={`flex flex-1 items-center justify-center gap-1 py-2 ${
+                className={`flex min-w-0 flex-1 items-center justify-center gap-1 truncate py-2 ${
                   leftTab === t
                     ? "border-b-2 border-primary text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t === "files" ? (
-                  <Layers className="h-3 w-3" />
+                  <Layers className="h-3 w-3 shrink-0" />
                 ) : t === "palette" ? (
-                  <LayoutGrid className="h-3 w-3" />
+                  <LayoutGrid className="h-3 w-3 shrink-0" />
                 ) : (
-                  <History className="h-3 w-3" />
+                  <History className="h-3 w-3 shrink-0" />
                 )}
-                {t === "files" ? "Arquivos" : t === "palette" ? "Componentes" : "Histórico"}
+                <span className="truncate">
+                  {t === "files" ? "Arquivos" : t === "palette" ? "Componentes" : "Histórico"}
+                </span>
               </button>
             ))}
           </div>
-          <div className="flex-1 overflow-auto p-3">
+          <div className="min-h-0 flex-1 overflow-auto p-3">
             {leftTab === "files" ? <FileTree /> : leftTab === "palette" ? <ComponentPalette /> : <HistoryPanel />}
           </div>
         </aside>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
 
-        {/* Center: canvas + flow */}
-        <main className="flex min-w-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1">
-            <Canvas preview={preview} />
-          </div>
-          {preview && <LogPanel />}
-        </main>
+        {/* Center: canvas + logs */}
+        <ResizablePanel defaultSize={isMobile ? 50 : 60} minSize={20}>
+          <ResizablePanelGroup orientation="vertical" className="h-full">
+            <ResizablePanel defaultSize={preview ? 70 : 100} minSize={20}>
+              <main className="h-full min-h-0 min-w-0">
+                <Canvas preview={preview} />
+              </main>
+            </ResizablePanel>
+            {preview && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={30} minSize={10}>
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <LogPanel />
+                  </div>
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
 
         {/* Right */}
-        <aside className="w-72 shrink-0 border-l border-border bg-[color:var(--panel)]">
-          <PropertiesPanel />
-        </aside>
-      </div>
+        <ResizablePanel defaultSize={isMobile ? 25 : 23} minSize={10}>
+          <aside className="h-full min-h-0 overflow-auto border-border bg-[color:var(--panel)]">
+            <PropertiesPanel />
+          </aside>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       <CodeEditorModal
         open={htmlOpen}
