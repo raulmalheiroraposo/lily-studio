@@ -107,6 +107,15 @@ function Manual() {
           <li>Erros de compilação/execução aparecem dentro do próprio bloco, sem quebrar o editor.</li>
         </ul>
 
+        <h2>6.2 Código-fonte ↔ canvas (mão dupla)</h2>
+        <p>Os botões <b>Código HTML</b> (páginas) e <b>Código TSX</b> (componentes) abrem o código real do arquivo. Ao salvar, o canvas é atualizado:</p>
+        <ul>
+          <li><b>Tags novas</b> escritas à mão viram novos blocos (posição/tamanho vindos do <code>style</code>; sem posição, são empilhados automaticamente).</li>
+          <li><b>Alterações</b> em texto, estilos inline e atributos dos blocos existentes são aplicadas.</li>
+          <li><b>Tags removidas</b> do código excluem os blocos correspondentes.</li>
+          <li>Não remova o atributo <code>data-block-id</code> dos wrappers: ele é o que liga cada bloco ao seu código.</li>
+        </ul>
+
         <h2>7. Salvar, abrir e exportar</h2>
         <ul>
           <li><b>Autosave:</b> toda alteração no canvas, nos scripts e nos arquivos é salva na hora no navegador — a barra superior mostra o horário do último salvamento.</li>

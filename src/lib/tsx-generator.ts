@@ -51,7 +51,7 @@ export function blocksToTsx(componentName: string, blocks: Block[]): string {
   const children = blocks
     .map(
       (b) =>
-        `      <div style={${styleLiteral({
+        `      <div data-block-id={${JSON.stringify(b.id)}} style={${styleLiteral({
           position: "absolute",
           left: `${b.x}px`,
           top: `${b.y}px`,

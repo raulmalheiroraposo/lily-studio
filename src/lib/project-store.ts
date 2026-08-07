@@ -82,6 +82,8 @@ type Actions = {
   updateFileCode: (id: string, code: string) => void;
   /** Writes generated code without polluting the undo history. */
   setGeneratedCode: (id: string, code: string) => void;
+  /** Replaces all blocks of a file (used when syncing source code back). */
+  setBlocks: (fileId: string, blocks: Block[]) => void;
   addBlock: (kind: BlockKind) => void;
   updateBlock: (id: string, patch: Partial<Block>) => void;
   removeBlock: (id: string) => void;
@@ -269,6 +271,11 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       setGeneratedCode: (id, code) =>
         set((s) => ({
           files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+        })),
+      setBlocks: (fileId, blocks) =>
+        track("Sincronizou código", (s) => ({
+          files: s.files.map((f) => (f.id === fileId ? { ...f, blocks } : f)),
+          selectedBlockId: blocks.some((b) => b.id === s.selectedBlockId) ? s.selectedBlockId : null,
         })),
 
       addBlock: (kind) => {

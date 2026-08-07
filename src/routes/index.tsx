@@ -43,8 +43,7 @@ function EditorPage() {
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
-  const updateBlock = useProject((s) => s.updateBlock);
-  const removeBlock = useProject((s) => s.removeBlock);
+  const setBlocks = useProject((s) => s.setBlocks);
   const exportProject = useProject((s) => s.exportProject);
   const importProject = useProject((s) => s.importProject);
   const undo = useProject((s) => s.undo);
@@ -83,9 +82,8 @@ function EditorPage() {
 
   const saveHtml = (source: string) => {
     if (!activePage) return;
-    const { patches, removedIds } = parsePageHtml(source, activePage.blocks ?? []);
-    for (const [id, patch] of Object.entries(patches)) updateBlock(id, patch);
-    for (const id of removedIds) removeBlock(id);
+    const { blocks } = parsePageHtml(source, activePage.blocks ?? []);
+    setBlocks(activePage.id, blocks);
   };
 
   return (

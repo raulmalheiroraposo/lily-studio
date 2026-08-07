@@ -9,6 +9,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { runBinding } from "@/lib/script-runtime";
 import { ReactBlock } from "@/components/blocks/ReactBlock";
 import { blocksToTsx } from "@/lib/tsx-generator";
+import { parseComponentTsx } from "@/lib/tsx-importer";
 import type { Block } from "@/lib/types";
 
 export function Canvas({ preview }: { preview: boolean }) {
@@ -22,6 +23,7 @@ export function Canvas({ preview }: { preview: boolean }) {
   const removeBlock = useProject((s) => s.removeBlock);
   const updateFileCode = useProject((s) => s.updateFileCode);
   const setGeneratedCode = useProject((s) => s.setGeneratedCode);
+  const setBlocks = useProject((s) => s.setBlocks);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
   const [tsxOpen, setTsxOpen] = useState(false);
 
@@ -245,7 +247,14 @@ export function Canvas({ preview }: { preview: boolean }) {
         value={activeFile.code ?? ""}
         lang="typescript"
         onClose={() => setTsxOpen(false)}
-        onSave={(v) => updateFileCode(activeFile.id, v)}
+        onSave={(v) => {
+          updateFileCode(activeFile.id, v);
+          // Reflects hand-written TSX back into the visual blocks.
+          if ((activeFile.blocks ?? []).length === 0) return;
+          const parsed = parseComponentTsx(v, activeFile.blocks ?? []);
+          lastSignature.current = "";
+          setBlocks(activeFile.id, parsed.blocks);
+        }}
       />
     </div>
   );
