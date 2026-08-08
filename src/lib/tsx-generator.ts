@@ -43,10 +43,56 @@ function inner(block: Block): string {
   }
 }
 
+export type TsxShell = {
+  /** Imports and anything declared before the component. */
+  head: string;
+  /** Hooks/statements inside the component before its `return`. */
+  prelude: string;
+  /** Anything declared after the component. */
+  tail: string;
+  name?: string;
+};
+
+/**
+ * Splits existing component source so hand-written logic (hooks, helpers,
+ * imports) survives regeneration from the visual blocks.
+ */
+export function extractTsxShell(source: string): TsxShell {
+  const empty: TsxShell = { head: "", prelude: "", tail: "" };
+  if (!source?.trim()) return empty;
+  const decl =
+    /(?:export\s+default\s+)?function\s+([A-Za-z0-9_$]+)\s*\([^)]*\)\s*\{/.exec(source);
+  if (!decl) return empty;
+  const bodyStart = decl.index + decl[0].length;
+  // Match the component's closing brace.
+  let depth = 1;
+  let i = bodyStart;
+  while (i < source.length && depth > 0) {
+    const ch = source[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") depth--;
+    i++;
+  }
+  const body = source.slice(bodyStart, i - 1);
+  const retIdx = body.search(/\n\s*return\s*\(/);
+  const prelude = retIdx >= 0 ? body.slice(0, retIdx) : "";
+  return {
+    head: source.slice(0, decl.index).trimEnd(),
+    prelude: prelude.replace(/^\s*\n/, "").trimEnd(),
+    tail: source.slice(i).trim(),
+    name: decl[1],
+  };
+}
+
 /** Builds a `export default function` component from positioned blocks. */
-export function blocksToTsx(componentName: string, blocks: Block[]): string {
+export function blocksToTsx(
+  componentName: string,
+  blocks: Block[],
+  previousCode?: string
+): string {
   const safeName = (componentName.replace(/\.[jt]sx?$/i, "").replace(/[^A-Za-z0-9_]/g, "") || "Componente")
     .replace(/^[0-9]/, "C$&");
+  const shell = extractTsxShell(previousCode ?? "");
   const minHeight = Math.max(200, ...blocks.map((b) => b.y + b.h + 24));
   const children = blocks
     .map(
@@ -60,12 +106,16 @@ export function blocksToTsx(componentName: string, blocks: Block[]): string {
         })}}>\n        ${inner(b)}\n      </div>`
     )
     .join("\n");
-  return `export default function ${safeName}() {
+  const head = shell.head ? `${shell.head}\n\n` : "";
+  const prelude = shell.prelude ? `${shell.prelude}\n\n` : "";
+  const tail = shell.tail ? `\n${shell.tail}\n` : "";
+  return `${head}export default function ${shell.name || safeName}() {
+${prelude}
   return (
     <div style={${styleLiteral({ position: "relative", width: "100%", minHeight: `${minHeight}px` })}}>
 ${children || "      {/* Arraste componentes da paleta para montar este componente. */}"}
     </div>
   );
 }
-`;
+${tail}`;
 }
