@@ -16,7 +16,10 @@ export function BlockRenderer({
     height: "100%",
     ...(block.style as React.CSSProperties),
   };
-  const attrs = block.attrs ?? {};
+  // JSX expression attributes (stored as `{expr}`) only apply to compiled TSX.
+  const attrs = Object.fromEntries(
+    Object.entries(block.attrs ?? {}).filter(([, v]) => !/^\{[\s\S]*\}$/.test(String(v)))
+  ) as Record<string, string>;
   const handlers = eventHandlers ?? {};
   switch (block.kind) {
     case "heading":

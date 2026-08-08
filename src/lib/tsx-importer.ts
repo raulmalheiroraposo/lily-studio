@@ -3,6 +3,25 @@ import { parsePageHtml } from "./html-importer";
 
 const camelToKebab = (k: string) => k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 
+/** Matches `name={expr}` allowing up to two levels of nested braces in expr. */
+const JSX_EXPR_ATTR = /([A-Za-z_][\w:.$-]*)=\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}/g;
+
+/**
+ * Rewrites JSX expression attributes (e.g. `onClick={() => setC(c + 1)}`) into
+ * encoded `data-jsxattr-*` attributes so the DOM parser keeps the original
+ * attribute name casing and the expression source intact.
+ */
+function encodeExpressionAttrs(source: string): string {
+  let i = 0;
+  return source.replace(JSX_EXPR_ATTR, (full, name: string, expr: string) => {
+    const trimmed = expr.trim();
+    if (name === "data-block-id" || name === "style") return full;
+    const literal = /^(["'])([\s\S]*)\1$/.exec(trimmed);
+    if (literal) return `${name}="${literal[2].replace(/"/g, "&quot;")}"`;
+    return ` data-jsxattr-${i++}="${encodeURIComponent(`${name}=${trimmed}`)}"`;
+  });
+}
+
 /** Best-effort conversion of a `style={{...}}` object literal into CSS text. */
 function objectLiteralToCss(literal: string): string {
   try {
@@ -31,8 +50,7 @@ export function jsxToHtml(source: string): string {
   out = out.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "");
   out = out.replace(/dangerouslySetInnerHTML=\{\{[\s\S]*?\}\}/g, "");
   out = out.replace(/style=\{(\{[\s\S]*?\})\}/g, (_, lit: string) => `style="${objectLiteralToCss(lit).replace(/"/g, "&quot;")}"`);
-  out = out.replace(/([A-Za-z_:][-\w:.]*)=\{(["'])([\s\S]*?)\2\}/g, (_, name: string, __, val: string) => `${name}="${val.replace(/"/g, "&quot;")}"`);
-  out = out.replace(/([A-Za-z_:][-\w:.]*)=\{([^{}"']*?)\}/g, (_, name: string, val: string) => `${name}="${String(val).trim()}"`);
+  out = encodeExpressionAttrs(out);
   out = out.replace(/\{["'`]([^"'`]*)["'`]\}/g, "$1");
   return out;
 }
