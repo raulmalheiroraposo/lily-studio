@@ -9,7 +9,10 @@ const styleLiteral = (style: Record<string, unknown>) => JSON.stringify(style ??
 
 function attrsLiteral(attrs: Record<string, string>) {
   return Object.entries(attrs ?? {})
-    .map(([k, v]) => ` ${k}={${JSON.stringify(v)}}`)
+    .map(([k, v]) =>
+      // Values kept as `{expr}` are JSX expressions (handlers, refs, numbers).
+      /^\{[\s\S]*\}$/.test(v) ? ` ${k}=${v}` : ` ${k}={${JSON.stringify(v)}}`
+    )
     .join("");
 }
 
