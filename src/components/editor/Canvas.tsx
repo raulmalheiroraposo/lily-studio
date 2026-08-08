@@ -77,7 +77,10 @@ export function Canvas({ preview }: { preview: boolean }) {
     if (!isComponent || !activeFile || blocks.length === 0) return;
     if (lastSignature.current === signature) return;
     lastSignature.current = signature;
-    setGeneratedCode(activeFile.id, blocksToTsx(activeFile.name, blocks));
+    setGeneratedCode(
+      activeFile.id,
+      blocksToTsx(activeFile.name, blocks, activeFile.code ?? "")
+    );
   }, [isComponent, signature, activeFile, blocks, setGeneratedCode]);
 
   if (!activeFile) {
