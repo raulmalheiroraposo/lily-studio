@@ -157,25 +157,46 @@ export function parsePageHtml(
     patches[block.id] = patch;
   }
 
-  // New hand-written tags: scan the container that holds the known wrappers.
-  const anchor = doc.querySelector("[data-block-id]");
-  const root = (anchor?.parentElement ?? doc.querySelector(".page") ?? doc.body) as HTMLElement;
+  // New hand-written tags: walk the whole document, skipping known block
+  // subtrees, so elements written anywhere (nested included) become blocks.
+  const fresh: HTMLElement[] = [];
+  const collect = (parent: HTMLElement) => {
+    for (const child of Array.from(parent.children) as HTMLElement[]) {
+      if (isIgnored(child)) continue;
+      if (child.hasAttribute("data-block-id")) continue;
+      if (child.querySelector("[data-block-id]")) {
+        collect(child);
+        continue;
+      }
+      fresh.push(child);
+    }
+  };
+  collect(doc.body);
+
   let nextY = Math.max(0, ...blocks.map((b) => b.y + b.h + 16), 24);
-  for (const child of Array.from(root.children) as HTMLElement[]) {
-    if (child.hasAttribute("data-block-id") || isIgnored(child)) continue;
-    const cs = parseStyleAttr(child.getAttribute("style") ?? "");
+  const emit = (el: HTMLElement) => {
+    const cs = parseStyleAttr(el.getAttribute("style") ?? "");
     const positioned = cs.position === "absolute";
-    const inner = positioned ? ((child.firstElementChild as HTMLElement | null) ?? child) : child;
+    // A wrapper written like the generated markup: use its single child as content.
+    const onlyChild = el.children.length === 1 ? (el.firstElementChild as HTMLElement) : null;
+    const inner = positioned && onlyChild ? onlyChild : el;
     const layout = {
       x: px(cs.left) ?? 24,
       y: px(cs.top) ?? nextY,
       w: px(cs.width) ?? 240,
       h: px(cs.height) ?? 60,
     };
-    const block = blockFromElement(inner, layout);
     if (!positioned) nextY = layout.y + layout.h + 16;
+    const children = Array.from(inner.children).filter(
+      (c) => !isIgnored(c) && !(c as HTMLElement).hasAttribute("data-block-id")
+    ) as HTMLElement[];
+    const block = blockFromElement(inner, layout);
+    // Containers with nested markup: flatten children into their own blocks.
+    if (children.length > 0) block.text = undefined;
     added.push(block);
-  }
+    for (const child of children) emit(child);
+  };
+  for (const el of fresh) emit(el);
 
   const nextBlocks = blocks
     .filter((b) => !removedIds.includes(b.id))
