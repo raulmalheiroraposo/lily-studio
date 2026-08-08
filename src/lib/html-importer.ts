@@ -73,6 +73,13 @@ function readInner(inner: HTMLElement, knownProps: string[]) {
   const attrs: Record<string, string> = {};
   for (const attr of Array.from(inner.attributes)) {
     if (attr.name === "style" || attr.name.startsWith("data-react") || attr.name === "data-block-id") continue;
+    // Encoded JSX expression attribute: restore original name + `{expr}` value.
+    if (attr.name.startsWith("data-jsxattr-")) {
+      const decoded = decodeURIComponent(attr.value);
+      const eq = decoded.indexOf("=");
+      if (eq > 0) attrs[decoded.slice(0, eq)] = `{${decoded.slice(eq + 1)}}`;
+      continue;
+    }
     attrs[attr.name] = attr.value;
   }
   const props: Record<string, string | number | boolean> = {};
@@ -82,10 +89,10 @@ function readInner(inner: HTMLElement, knownProps: string[]) {
       delete attrs[key];
     }
   }
-  if (inner.tagName === "INPUT" || inner.tagName === "IMG" || inner.tagName === "A") {
-    delete attrs.type;
-    delete attrs.loading;
-  }
+  // Drop only the attributes the generator itself always emits.
+  if (inner.tagName === "IMG" && attrs.loading === "lazy") delete attrs.loading;
+  if (inner.tagName === "BUTTON" && attrs.type === "button") delete attrs.type;
+  if (inner.tagName === "INPUT" && attrs.type === "text") delete attrs.type;
   return { text, style, attrs, props };
 }
 
