@@ -76,7 +76,10 @@ function styleToCss(style: Record<string, string> = {}) {
 }
 
 function attrsToHtml(attrs: Record<string, string> = {}) {
-  return Object.entries(attrs).map(([k, v]) => ` ${k}="${esc(v)}"`).join("");
+  return Object.entries(attrs)
+    .filter(([, v]) => !/^\{[\s\S]*\}$/.test(String(v)))
+    .map(([k, v]) => ` ${k}="${esc(v)}"`)
+    .join("");
 }
 
 function innerBlockHtml(block: Block, code: string) {
