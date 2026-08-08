@@ -139,7 +139,11 @@ export function Canvas({ preview }: { preview: boolean }) {
         ref={surfaceRef}
         className="relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
       >
-        {preview
+        {preview && isComponent ? (
+          <div className="absolute inset-0 p-4">
+            <ReactBlock code={activeFile.code ?? ""} />
+          </div>
+        ) : preview
           ? blocks.map((block) => (
               <div
                 key={block.id}
@@ -281,11 +285,7 @@ export function Canvas({ preview }: { preview: boolean }) {
             Arraste componentes da paleta à esquerda para começar.
           </div>
         )}
-        {blocks.length === 0 && preview && isComponent && (
-          <div className="absolute inset-0 p-4">
-            <ReactBlock code={activeFile.code ?? ""} />
-          </div>
-        )}
+        {null}
       </div>
 
       <CodeEditorModal
