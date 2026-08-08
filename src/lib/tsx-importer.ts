@@ -50,8 +50,7 @@ export function jsxToHtml(source: string): string {
   out = out.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "");
   out = out.replace(/dangerouslySetInnerHTML=\{\{[\s\S]*?\}\}/g, "");
   out = out.replace(/style=\{(\{[\s\S]*?\})\}/g, (_, lit: string) => `style="${objectLiteralToCss(lit).replace(/"/g, "&quot;")}"`);
-  out = out.replace(/([A-Za-z_:][-\w:.]*)=\{(["'])([\s\S]*?)\2\}/g, (_, name: string, __, val: string) => `${name}="${val.replace(/"/g, "&quot;")}"`);
-  out = out.replace(/([A-Za-z_:][-\w:.]*)=\{([^{}"']*?)\}/g, (_, name: string, val: string) => `${name}="${String(val).trim()}"`);
+  out = encodeExpressionAttrs(out);
   out = out.replace(/\{["'`]([^"'`]*)["'`]\}/g, "$1");
   return out;
 }
