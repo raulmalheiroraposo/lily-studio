@@ -1,18 +1,19 @@
 import type { Block, ProjectFile } from "./types";
+import { DEFAULT_CHART_DATA, type ChartPoint } from "./chart-data";
 
-const CHART_DATA = [
-  { name: "Jan", value: 40 },
-  { name: "Fev", value: 30 },
-  { name: "Mar", value: 55 },
-  { name: "Abr", value: 25 },
-  { name: "Mai", value: 70 },
-];
 const CHART_COLORS = ["#5da8ff", "#b48cff", "#66d9c2", "#ffb861", "#ff7d9c"];
 
-export function chartSvg(kind: "chart-bar" | "chart-line" | "chart-pie", w: number, h: number) {
+/** Pure SVG renderer — also serialized into the exported site runtime. */
+export function renderChartSvg(
+  kind: string,
+  w: number,
+  h: number,
+  CHART_DATA: ChartPoint[],
+  CHART_COLORS: string[]
+) {
   const W = Math.max(120, w - 16);
   const H = Math.max(80, h - 16);
-  const max = Math.max(...CHART_DATA.map((d) => d.value));
+  const max = Math.max(...CHART_DATA.map((d) => d.value), 1);
   const pad = 24;
   const innerW = W - pad * 2;
   const innerH = H - pad * 2;
@@ -65,6 +66,16 @@ export function chartSvg(kind: "chart-bar" | "chart-line" | "chart-pie", w: numb
   return `${open}${slices}</svg>`;
 }
 
+export function chartSvg(
+  kind: "chart-bar" | "chart-line" | "chart-pie",
+  w: number,
+  h: number,
+  data: ChartPoint[] = DEFAULT_CHART_DATA
+) {
+  return renderChartSvg(kind, w, h, data, CHART_COLORS);
+}
+
+
 function esc(v: unknown) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -75,9 +86,17 @@ function styleToCss(style: Record<string, string> = {}) {
     .join("");
 }
 
-function attrsToHtml(attrs: Record<string, string> = {}) {
-  return Object.entries(attrs)
-    .filter(([, v]) => !/^\{[\s\S]*\}$/.test(String(v)))
+function attrsToHtml(attrs: Record<string, string> = {}, defaults: Record<string, unknown> = {}) {
+  const merged: Record<string, string> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    if (/^\{[\s\S]*\}$/.test(String(v))) continue;
+    merged[k] = String(v);
+  }
+  for (const [k, v] of Object.entries(defaults)) {
+    if (v === undefined || v === null || v === "") continue;
+    if (!(k in merged)) merged[k] = String(v);
+  }
+  return Object.entries(merged)
     .map(([k, v]) => ` ${k}="${esc(v)}"`)
     .join("");
 }
@@ -93,17 +112,35 @@ function innerBlockHtml(block: Block, code: string) {
     case "paragraph":
       return `<p style="${full}"${a}>${text}</p>`;
     case "button":
-      return `<button type="button" style="width:100%;height:100%;border-radius:6px;border:0;cursor:pointer;background:#5da8ff;color:#08111f;font-weight:600;${s}"${a}>${text}</button>`;
+      return `<button style="width:100%;height:100%;border-radius:6px;border:0;cursor:pointer;background:#5da8ff;color:#08111f;font-weight:600;${s}"${attrsToHtml(
+        block.attrs,
+        { type: "button" }
+      )}>${text}</button>`;
     case "input":
-      return `<input placeholder="${esc(block.props.placeholder)}" style="width:100%;height:100%;padding:0 10px;border-radius:6px;border:1px solid #2a3346;background:#0f1626;color:#e6ecf7;${s}"${a} />`;
+      return `<input style="width:100%;height:100%;padding:0 10px;border-radius:6px;border:1px solid #2a3346;background:#0f1626;color:#e6ecf7;${s}"${attrsToHtml(
+        block.attrs,
+        { placeholder: block.props.placeholder, type: "text" }
+      )} />`;
     case "image":
-      return `<img src="${esc(block.props.src)}" alt="${esc(block.props.alt)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:6px;${s}"${a} />`;
+      return `<img style="width:100%;height:100%;object-fit:cover;border-radius:6px;${s}"${attrsToHtml(
+        block.attrs,
+        { src: block.props.src, alt: block.props.alt, loading: "lazy" }
+      )} />`;
     case "link":
-      return `<a href="${esc(block.props.href ?? "#")}" style="color:#5da8ff;${s}"${a}>${text}</a>`;
+      return `<a style="color:#5da8ff;${s}"${attrsToHtml(block.attrs, {
+        href: block.props.href ?? "#",
+      })}>${text}</a>`;
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
-      return `<div style="width:100%;height:100%;background:#111a2b;border-radius:8px;padding:8px;box-sizing:border-box;${s}"${a}>${chartSvg(block.kind, block.w, block.h)}</div>`;
+      return `<div data-chart="${block.kind}" data-chart-w="${block.w}" data-chart-h="${block.h}" style="width:100%;height:100%;background:#111a2b;border-radius:8px;padding:8px;box-sizing:border-box;${s}"${attrsToHtml(
+        block.attrs,
+        {
+          "data-source": block.props.dataSource,
+          "data-name-key": block.props.nameKey,
+          "data-value-key": block.props.valueKey,
+        }
+      )}>${chartSvg(block.kind, block.w, block.h)}</div>`;
     case "react":
       return `<div data-react-root="${block.id}" style="width:100%;height:100%;overflow:auto;${s}"${a}></div><script type="text/jsx-source" data-react-code="${block.id}">${code
         .replace(/<\/script>/gi, "<\\/script>")}</script>`;
@@ -202,7 +239,7 @@ export function scriptFileName(file: ProjectFile) {
   return /\.[cm]?js$/.test(file.name) ? file.name : `${file.name}.js`;
 }
 
-export const SITE_RUNTIME_JS = String.raw`(function () {
+const BASE_RUNTIME_JS = String.raw`(function () {
   var listEl = document.getElementById("fs-log-list");
   var panel = document.getElementById("fs-log");
   var toggle = document.getElementById("fs-log-toggle");
@@ -310,3 +347,73 @@ export const SITE_RUNTIME_JS = String.raw`(function () {
   });
 })();
 `;
+
+/** Resolves chart data sources (JSON, URL or script function) in the exported site. */
+const CHART_RUNTIME_JS = `(function () {
+  var renderChartSvg = ${renderChartSvg.toString()};
+  var COLORS = ${JSON.stringify(CHART_COLORS)};
+  var FALLBACK = ${JSON.stringify(DEFAULT_CHART_DATA)};
+
+  function normalize(raw, nameKey, valueKey) {
+    var data = raw;
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      var nested = null;
+      for (var k in data) if (Array.isArray(data[k])) { nested = data[k]; break; }
+      if (nested) data = nested;
+      else {
+        return Object.keys(data).map(function (key) {
+          return { name: key, value: Number(data[key]) || 0 };
+        });
+      }
+    }
+    if (!Array.isArray(data)) return [];
+    return data.map(function (item, i) {
+      if (typeof item === "number") return { name: String(i + 1), value: item };
+      var o = item || {};
+      var name = o[nameKey] != null ? o[nameKey] : (o.name != null ? o.name : (o.label != null ? o.label : i + 1));
+      var value = Number(o[valueKey] != null ? o[valueKey] : (o.value != null ? o.value : o.y));
+      return { name: String(name), value: isFinite(value) ? value : 0 };
+    });
+  }
+
+  function resolve(source) {
+    var src = (source || "").trim();
+    if (!src) return Promise.resolve(null);
+    if (src.charAt(0) === "[" || src.charAt(0) === "{") return Promise.resolve(JSON.parse(src));
+    if (/^(https?:)?\\/\\//.test(src) || src.charAt(0) === "/") {
+      return fetch(src).then(function (res) {
+        if (!res.ok) throw new Error(res.status + " " + (res.statusText || "") + " · " + src);
+        return res.json();
+      });
+    }
+    var fn = window[src.replace(/\\(\\s*\\)$/, "")];
+    if (typeof fn !== "function") throw new Error("Fonte de dados não reconhecida: " + src);
+    return Promise.resolve(fn());
+  }
+
+  var charts = document.querySelectorAll("[data-chart]");
+  Array.prototype.forEach.call(charts, function (el) {
+    var source = el.getAttribute("data-source") || el.getAttribute("data-chart-source") || "";
+    if (!source) return;
+    var nameKey = el.getAttribute("data-name-key") || "name";
+    var valueKey = el.getAttribute("data-value-key") || "value";
+    var w = parseInt(el.getAttribute("data-chart-w"), 10) || el.clientWidth || 320;
+    var h = parseInt(el.getAttribute("data-chart-h"), 10) || el.clientHeight || 200;
+    try {
+      Promise.resolve(resolve(source))
+        .then(function (raw) {
+          var data = normalize(raw, nameKey, valueKey);
+          el.innerHTML = renderChartSvg(el.getAttribute("data-chart"), w, h, data.length ? data : FALLBACK, COLORS);
+          if (window.__fluxoLog) window.__fluxoLog("success", "grafico", "dados carregados de " + source, data.length + " pontos");
+        })
+        .catch(function (err) {
+          if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+        });
+    } catch (err) {
+      if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+    }
+  });
+})();
+`;
+
+export const SITE_RUNTIME_JS = `${BASE_RUNTIME_JS}\n${CHART_RUNTIME_JS}`;

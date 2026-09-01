@@ -29,6 +29,20 @@ export function listScriptFunctions(code: string): string[] {
   return Object.keys(exp).filter((k) => typeof exp[k] === "function");
 }
 
+/** Finds a function by name across the project scripts, falling back to globals. */
+export function resolveScriptFunction(
+  files: ProjectFile[],
+  name: string
+): ((...args: unknown[]) => unknown) | null {
+  for (const file of files) {
+    if (file.type !== "script" || !file.code) continue;
+    const fn = getScriptExports(file.code)[name];
+    if (typeof fn === "function") return fn as (...args: unknown[]) => unknown;
+  }
+  const g = (globalThis as unknown as Record<string, unknown>)[name];
+  return typeof g === "function" ? (g as (...args: unknown[]) => unknown) : null;
+}
+
 export async function runBinding(
   binding: EventBinding,
   files: ProjectFile[],
