@@ -16,9 +16,27 @@ function attrsLiteral(attrs: Record<string, string>) {
     .join("");
 }
 
+/**
+ * Merges the attributes written by hand (which keep their source order) with the
+ * defaults the generator provides, so an edited attribute overrides the default
+ * instead of being emitted twice.
+ */
+function mergeAttrs(
+  defaults: Record<string, unknown>,
+  attrs: Record<string, string> = {}
+): Record<string, string> {
+  const out: Record<string, string> = { ...attrs };
+  for (const [k, v] of Object.entries(defaults)) {
+    if (v === undefined || v === null || v === "") continue;
+    if (!(k in out)) out[k] = String(v);
+  }
+  return out;
+}
+
 function inner(block: Block): string {
   const st = { width: "100%", height: "100%", ...(block.style ?? {}) };
-  const a = attrsLiteral(block.attrs ?? {});
+  const own = block.attrs ?? {};
+  const a = attrsLiteral(own);
   const text = block.text ?? "";
   switch (block.kind) {
     case "heading":
@@ -26,13 +44,21 @@ function inner(block: Block): string {
     case "paragraph":
       return `<p style={${styleLiteral(st)}}${a}>${text}</p>`;
     case "button":
-      return `<button type="button" style={${styleLiteral({ borderRadius: "6px", fontWeight: "600", ...st })}}${a}>${text}</button>`;
+      return `<button style={${styleLiteral({ borderRadius: "6px", fontWeight: "600", ...st })}}${attrsLiteral(
+        mergeAttrs({ type: "button" }, own)
+      )}>${text}</button>`;
     case "input":
-      return `<input placeholder={${JSON.stringify(String(block.props.placeholder ?? ""))}} style={${styleLiteral({ borderRadius: "6px", padding: "0 10px", ...st })}}${a} />`;
+      return `<input style={${styleLiteral({ borderRadius: "6px", padding: "0 10px", ...st })}}${attrsLiteral(
+        mergeAttrs({ placeholder: block.props.placeholder }, own)
+      )} />`;
     case "image":
-      return `<img src={${JSON.stringify(String(block.props.src ?? ""))}} alt={${JSON.stringify(String(block.props.alt ?? ""))}} style={${styleLiteral({ objectFit: "cover", borderRadius: "6px", ...st })}}${a} />`;
+      return `<img style={${styleLiteral({ objectFit: "cover", borderRadius: "6px", ...st })}}${attrsLiteral(
+        mergeAttrs({ src: block.props.src, alt: block.props.alt }, own)
+      )} />`;
     case "link":
-      return `<a href={${JSON.stringify(String(block.props.href ?? "#"))}} style={${styleLiteral(block.style ?? {})}}${a}>${text}</a>`;
+      return `<a style={${styleLiteral(block.style ?? {})}}${attrsLiteral(
+        mergeAttrs({ href: block.props.href ?? "#" }, own)
+      )}>${text}</a>`;
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
