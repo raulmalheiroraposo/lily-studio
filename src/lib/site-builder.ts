@@ -66,6 +66,16 @@ export function renderChartSvg(
   return `${open}${slices}</svg>`;
 }
 
+export function chartSvg(
+  kind: "chart-bar" | "chart-line" | "chart-pie",
+  w: number,
+  h: number,
+  data: ChartPoint[] = DEFAULT_CHART_DATA
+) {
+  return renderChartSvg(kind, w, h, data, CHART_COLORS);
+}
+
+
 function esc(v: unknown) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
