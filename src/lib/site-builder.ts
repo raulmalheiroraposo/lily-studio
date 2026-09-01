@@ -239,7 +239,7 @@ export function scriptFileName(file: ProjectFile) {
   return /\.[cm]?js$/.test(file.name) ? file.name : `${file.name}.js`;
 }
 
-export const SITE_RUNTIME_JS = String.raw`(function () {
+const BASE_RUNTIME_JS = String.raw`(function () {
   var listEl = document.getElementById("fs-log-list");
   var panel = document.getElementById("fs-log");
   var toggle = document.getElementById("fs-log-toggle");
