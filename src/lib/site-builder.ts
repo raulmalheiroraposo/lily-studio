@@ -1,18 +1,19 @@
 import type { Block, ProjectFile } from "./types";
+import { DEFAULT_CHART_DATA, type ChartPoint } from "./chart-data";
 
-const CHART_DATA = [
-  { name: "Jan", value: 40 },
-  { name: "Fev", value: 30 },
-  { name: "Mar", value: 55 },
-  { name: "Abr", value: 25 },
-  { name: "Mai", value: 70 },
-];
 const CHART_COLORS = ["#5da8ff", "#b48cff", "#66d9c2", "#ffb861", "#ff7d9c"];
 
-export function chartSvg(kind: "chart-bar" | "chart-line" | "chart-pie", w: number, h: number) {
+/** Pure SVG renderer — also serialized into the exported site runtime. */
+export function renderChartSvg(
+  kind: string,
+  w: number,
+  h: number,
+  CHART_DATA: ChartPoint[],
+  CHART_COLORS: string[]
+) {
   const W = Math.max(120, w - 16);
   const H = Math.max(80, h - 16);
-  const max = Math.max(...CHART_DATA.map((d) => d.value));
+  const max = Math.max(...CHART_DATA.map((d) => d.value), 1);
   const pad = 24;
   const innerW = W - pad * 2;
   const innerH = H - pad * 2;
