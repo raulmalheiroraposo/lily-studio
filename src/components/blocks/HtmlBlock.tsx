@@ -93,7 +93,7 @@ export function BlockRenderer({
           {...attrs}
           {...handlers}
         >
-          <ChartBlock kind={block.kind} />
+          <ChartBlock kind={block.kind} block={block} />
         </div>
       );
     case "react":
