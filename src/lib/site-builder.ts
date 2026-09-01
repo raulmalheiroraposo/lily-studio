@@ -75,9 +75,17 @@ function styleToCss(style: Record<string, string> = {}) {
     .join("");
 }
 
-function attrsToHtml(attrs: Record<string, string> = {}) {
-  return Object.entries(attrs)
-    .filter(([, v]) => !/^\{[\s\S]*\}$/.test(String(v)))
+function attrsToHtml(attrs: Record<string, string> = {}, defaults: Record<string, unknown> = {}) {
+  const merged: Record<string, string> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    if (/^\{[\s\S]*\}$/.test(String(v))) continue;
+    merged[k] = String(v);
+  }
+  for (const [k, v] of Object.entries(defaults)) {
+    if (v === undefined || v === null || v === "") continue;
+    if (!(k in merged)) merged[k] = String(v);
+  }
+  return Object.entries(merged)
     .map(([k, v]) => ` ${k}="${esc(v)}"`)
     .join("");
 }
@@ -93,17 +101,35 @@ function innerBlockHtml(block: Block, code: string) {
     case "paragraph":
       return `<p style="${full}"${a}>${text}</p>`;
     case "button":
-      return `<button type="button" style="width:100%;height:100%;border-radius:6px;border:0;cursor:pointer;background:#5da8ff;color:#08111f;font-weight:600;${s}"${a}>${text}</button>`;
+      return `<button style="width:100%;height:100%;border-radius:6px;border:0;cursor:pointer;background:#5da8ff;color:#08111f;font-weight:600;${s}"${attrsToHtml(
+        block.attrs,
+        { type: "button" }
+      )}>${text}</button>`;
     case "input":
-      return `<input placeholder="${esc(block.props.placeholder)}" style="width:100%;height:100%;padding:0 10px;border-radius:6px;border:1px solid #2a3346;background:#0f1626;color:#e6ecf7;${s}"${a} />`;
+      return `<input style="width:100%;height:100%;padding:0 10px;border-radius:6px;border:1px solid #2a3346;background:#0f1626;color:#e6ecf7;${s}"${attrsToHtml(
+        block.attrs,
+        { placeholder: block.props.placeholder, type: "text" }
+      )} />`;
     case "image":
-      return `<img src="${esc(block.props.src)}" alt="${esc(block.props.alt)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:6px;${s}"${a} />`;
+      return `<img style="width:100%;height:100%;object-fit:cover;border-radius:6px;${s}"${attrsToHtml(
+        block.attrs,
+        { src: block.props.src, alt: block.props.alt, loading: "lazy" }
+      )} />`;
     case "link":
-      return `<a href="${esc(block.props.href ?? "#")}" style="color:#5da8ff;${s}"${a}>${text}</a>`;
+      return `<a style="color:#5da8ff;${s}"${attrsToHtml(block.attrs, {
+        href: block.props.href ?? "#",
+      })}>${text}</a>`;
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
-      return `<div style="width:100%;height:100%;background:#111a2b;border-radius:8px;padding:8px;box-sizing:border-box;${s}"${a}>${chartSvg(block.kind, block.w, block.h)}</div>`;
+      return `<div data-chart="${block.kind}" data-chart-w="${block.w}" data-chart-h="${block.h}" style="width:100%;height:100%;background:#111a2b;border-radius:8px;padding:8px;box-sizing:border-box;${s}"${attrsToHtml(
+        block.attrs,
+        {
+          "data-source": block.props.dataSource,
+          "data-name-key": block.props.nameKey,
+          "data-value-key": block.props.valueKey,
+        }
+      )}>${chartSvg(block.kind, block.w, block.h)}</div>`;
     case "react":
       return `<div data-react-root="${block.id}" style="width:100%;height:100%;overflow:auto;${s}"${a}></div><script type="text/jsx-source" data-react-code="${block.id}">${code
         .replace(/<\/script>/gi, "<\\/script>")}</script>`;
