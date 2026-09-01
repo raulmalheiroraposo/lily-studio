@@ -347,3 +347,73 @@ const BASE_RUNTIME_JS = String.raw`(function () {
   });
 })();
 `;
+
+/** Resolves chart data sources (JSON, URL or script function) in the exported site. */
+const CHART_RUNTIME_JS = `(function () {
+  var renderChartSvg = ${renderChartSvg.toString()};
+  var COLORS = ${JSON.stringify(CHART_COLORS)};
+  var FALLBACK = ${JSON.stringify(DEFAULT_CHART_DATA)};
+
+  function normalize(raw, nameKey, valueKey) {
+    var data = raw;
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      var nested = null;
+      for (var k in data) if (Array.isArray(data[k])) { nested = data[k]; break; }
+      if (nested) data = nested;
+      else {
+        return Object.keys(data).map(function (key) {
+          return { name: key, value: Number(data[key]) || 0 };
+        });
+      }
+    }
+    if (!Array.isArray(data)) return [];
+    return data.map(function (item, i) {
+      if (typeof item === "number") return { name: String(i + 1), value: item };
+      var o = item || {};
+      var name = o[nameKey] != null ? o[nameKey] : (o.name != null ? o.name : (o.label != null ? o.label : i + 1));
+      var value = Number(o[valueKey] != null ? o[valueKey] : (o.value != null ? o.value : o.y));
+      return { name: String(name), value: isFinite(value) ? value : 0 };
+    });
+  }
+
+  function resolve(source) {
+    var src = (source || "").trim();
+    if (!src) return Promise.resolve(null);
+    if (src.charAt(0) === "[" || src.charAt(0) === "{") return Promise.resolve(JSON.parse(src));
+    if (/^(https?:)?\\/\\//.test(src) || src.charAt(0) === "/") {
+      return fetch(src).then(function (res) {
+        if (!res.ok) throw new Error(res.status + " " + (res.statusText || "") + " · " + src);
+        return res.json();
+      });
+    }
+    var fn = window[src.replace(/\\(\\s*\\)$/, "")];
+    if (typeof fn !== "function") throw new Error("Fonte de dados não reconhecida: " + src);
+    return Promise.resolve(fn());
+  }
+
+  var charts = document.querySelectorAll("[data-chart]");
+  Array.prototype.forEach.call(charts, function (el) {
+    var source = el.getAttribute("data-source") || el.getAttribute("data-chart-source") || "";
+    if (!source) return;
+    var nameKey = el.getAttribute("data-name-key") || "name";
+    var valueKey = el.getAttribute("data-value-key") || "value";
+    var w = parseInt(el.getAttribute("data-chart-w"), 10) || el.clientWidth || 320;
+    var h = parseInt(el.getAttribute("data-chart-h"), 10) || el.clientHeight || 200;
+    try {
+      Promise.resolve(resolve(source))
+        .then(function (raw) {
+          var data = normalize(raw, nameKey, valueKey);
+          el.innerHTML = renderChartSvg(el.getAttribute("data-chart"), w, h, data.length ? data : FALLBACK, COLORS);
+          if (window.__fluxoLog) window.__fluxoLog("success", "grafico", "dados carregados de " + source, data.length + " pontos");
+        })
+        .catch(function (err) {
+          if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+        });
+    } catch (err) {
+      if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+    }
+  });
+})();
+`;
+
+export const SITE_RUNTIME_JS = `${BASE_RUNTIME_JS}\n${CHART_RUNTIME_JS}`;
