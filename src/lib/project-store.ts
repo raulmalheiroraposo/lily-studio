@@ -55,7 +55,13 @@ function defaultBlockFor(kind: BlockKind): Block {
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
-      return { ...base, w: 360, h: 240 };
+      return {
+        ...base,
+        w: 360,
+        h: 240,
+        // Empty = demo data; accepts inline JSON, a URL or a script function name.
+        props: { dataSource: "", nameKey: "name", valueKey: "value" },
+      };
     case "react":
       return {
         ...base,

@@ -73,6 +73,23 @@ export function Canvas({ preview }: { preview: boolean }) {
   const blocks = activeFile?.blocks ?? [];
   const signature = isComponent ? JSON.stringify(blocks) : "";
   const lastSignature = useRef<string>("");
+
+  // Hydrates the canvas from the component source when a .tsx file is opened
+  // (or on editor start) and it still has no blocks.
+  const hydratedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isComponent || !activeFile) return;
+    if (hydratedFor.current === activeFile.id) return;
+    hydratedFor.current = activeFile.id;
+    const code = activeFile.code ?? "";
+    if (!code.trim() || (activeFile.blocks ?? []).length > 0) return;
+    const parsed = parseComponentTsx(code, []);
+    if (parsed.blocks.length) {
+      lastSignature.current = JSON.stringify(parsed.blocks);
+      setBlocks(activeFile.id, parsed.blocks);
+    }
+  }, [isComponent, activeFile, setBlocks]);
+
   useEffect(() => {
     if (!isComponent || !activeFile || blocks.length === 0) return;
     if (lastSignature.current === signature) return;
@@ -168,6 +185,7 @@ export function Canvas({ preview }: { preview: boolean }) {
                   position={{ x: l?.x ?? block.x, y: l?.y ?? block.y }}
                   bounds="parent"
                   onDrag={(_, d) => {
+                    // Guides are only a hint while dragging; the snap is applied on release.
                     const s = snapRect(
                       { x: d.x, y: d.y, w: block.w, h: block.h },
                       blocks,
@@ -175,7 +193,6 @@ export function Canvas({ preview }: { preview: boolean }) {
                       surfaceSize
                     );
                     setGuides(s.guides);
-                    setLive({ id: block.id, x: s.x, y: s.y, w: block.w, h: block.h });
                   }}
                   onDragStop={(_, d) => {
                     const s = snapRect(
@@ -201,7 +218,6 @@ export function Canvas({ preview }: { preview: boolean }) {
                       surfaceSize
                     );
                     setGuides(s.guides);
-                    setLive({ id: block.id, ...s.rect });
                   }}
                   onResizeStop={(_, __, ref, ___, position) => {
                     const s = snapResize(
@@ -335,8 +351,7 @@ export function Canvas({ preview }: { preview: boolean }) {
         onClose={() => setTsxOpen(false)}
         onSave={(v) => {
           updateFileCode(activeFile.id, v);
-          // Reflects hand-written TSX back into the visual blocks.
-          if ((activeFile.blocks ?? []).length === 0) return;
+          // Reflects hand-written TSX back into the visual blocks (even from an empty canvas).
           const parsed = parseComponentTsx(v, activeFile.blocks ?? []);
           lastSignature.current = "";
           setBlocks(activeFile.id, parsed.blocks);
