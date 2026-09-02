@@ -73,6 +73,23 @@ export function Canvas({ preview }: { preview: boolean }) {
   const blocks = activeFile?.blocks ?? [];
   const signature = isComponent ? JSON.stringify(blocks) : "";
   const lastSignature = useRef<string>("");
+
+  // Hydrates the canvas from the component source when a .tsx file is opened
+  // (or on editor start) and it still has no blocks.
+  const hydratedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isComponent || !activeFile) return;
+    if (hydratedFor.current === activeFile.id) return;
+    hydratedFor.current = activeFile.id;
+    const code = activeFile.code ?? "";
+    if (!code.trim() || (activeFile.blocks ?? []).length > 0) return;
+    const parsed = parseComponentTsx(code, []);
+    if (parsed.blocks.length) {
+      lastSignature.current = JSON.stringify(parsed.blocks);
+      setBlocks(activeFile.id, parsed.blocks);
+    }
+  }, [isComponent, activeFile, setBlocks]);
+
   useEffect(() => {
     if (!isComponent || !activeFile || blocks.length === 0) return;
     if (lastSignature.current === signature) return;
