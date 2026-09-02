@@ -90,6 +90,7 @@ function attrsToHtml(attrs: Record<string, string> = {}, defaults: Record<string
   const merged: Record<string, string> = {};
   for (const [k, v] of Object.entries(attrs)) {
     if (/^\{[\s\S]*\}$/.test(String(v))) continue;
+    if (String(v).trim() === "") continue; // blank = attribute omitted
     merged[k] = String(v);
   }
   for (const [k, v] of Object.entries(defaults)) {

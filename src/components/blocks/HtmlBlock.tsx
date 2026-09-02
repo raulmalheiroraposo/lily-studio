@@ -17,8 +17,11 @@ export function BlockRenderer({
     ...(block.style as React.CSSProperties),
   };
   // JSX expression attributes (stored as `{expr}`) only apply to compiled TSX.
+  // Blank values mean "attribute not set", so they are never rendered.
   const attrs = Object.fromEntries(
-    Object.entries(block.attrs ?? {}).filter(([, v]) => !/^\{[\s\S]*\}$/.test(String(v)))
+    Object.entries(block.attrs ?? {}).filter(
+      ([, v]) => String(v).trim() !== "" && !/^\{[\s\S]*\}$/.test(String(v))
+    )
   ) as Record<string, string>;
   const handlers = eventHandlers ?? {};
   switch (block.kind) {
