@@ -201,7 +201,6 @@ export function Canvas({ preview }: { preview: boolean }) {
                       surfaceSize
                     );
                     setGuides(s.guides);
-                    setLive({ id: block.id, ...s.rect });
                   }}
                   onResizeStop={(_, __, ref, ___, position) => {
                     const s = snapResize(
