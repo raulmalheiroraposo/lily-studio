@@ -114,7 +114,19 @@ function Manual() {
           <li><b>Alterações</b> em texto, estilos inline e atributos dos blocos existentes são aplicadas.</li>
           <li><b>Tags removidas</b> do código excluem os blocos correspondentes.</li>
           <li>Não remova o atributo <code>data-block-id</code> dos wrappers: ele é o que liga cada bloco ao seu código.</li>
+          <li>Ao abrir um arquivo <code>.tsx</code> com código e canvas vazio, os blocos são recriados a partir do código automaticamente.</li>
         </ul>
+
+        <h2>6.3 Gráficos com dados reais</h2>
+        <p>Selecione um gráfico e preencha, na aba <b>Props</b>, o campo <b>Fonte de dados</b> (ou o atributo <code>data-source</code>):</p>
+        <ul>
+          <li><b>JSON inline:</b> <code>[{"{"}"name":"Jan","value":40{"}"}]</code> ou <code>{"{"}"Jan":40,"Fev":30{"}"}</code>.</li>
+          <li><b>URL de site/API:</b> <code>/api/vendas</code> ou <code>https://exemplo.com/dados.json</code> (o JSON pode ser um array ou um objeto com o array dentro).</li>
+          <li><b>Função de script:</b> o nome de uma função declarada em um arquivo de script (pode ser <code>async</code> e retornar o array).</li>
+          <li>Use <b>campo do rótulo</b> e <b>campo do valor</b> (<code>nameKey</code>/<code>valueKey</code>) quando as chaves do seu JSON tiverem outros nomes.</li>
+          <li>Funciona no canvas, no Preview e no site exportado em ZIP (offline, para JSON inline e funções de script).</li>
+        </ul>
+
 
         <h2>7. Salvar, abrir e exportar</h2>
         <ul>
