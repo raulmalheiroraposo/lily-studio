@@ -92,6 +92,40 @@ export function PropertiesPanel() {
                 />
               </Field>
             ))}
+            {block.kind.startsWith("chart-") && (
+              <>
+                <Field label="Fonte de dados (JSON, URL ou função de script)">
+                  <input
+                    value={String(block.props.dataSource ?? "")}
+                    placeholder='[{"name":"Jan","value":40}] · /api/vendas · carregarVendas'
+                    onChange={(e) =>
+                      updateBlock(block.id, { props: { ...block.props, dataSource: e.target.value } })
+                    }
+                    className="w-full rounded border border-border bg-input px-2 py-1"
+                  />
+                </Field>
+                <Field label="Campo do rótulo × campo do valor">
+                  <div className="flex gap-2">
+                    <input
+                      value={String(block.props.nameKey ?? "")}
+                      placeholder="name"
+                      onChange={(e) =>
+                        updateBlock(block.id, { props: { ...block.props, nameKey: e.target.value } })
+                      }
+                      className="w-full rounded border border-border bg-input px-2 py-1"
+                    />
+                    <input
+                      value={String(block.props.valueKey ?? "")}
+                      placeholder="value"
+                      onChange={(e) =>
+                        updateBlock(block.id, { props: { ...block.props, valueKey: e.target.value } })
+                      }
+                      className="w-full rounded border border-border bg-input px-2 py-1"
+                    />
+                  </div>
+                </Field>
+              </>
+            )}
             <Field label="Largura × Altura">
               <div className="flex gap-2">
                 <input
