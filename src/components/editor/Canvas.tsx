@@ -168,6 +168,7 @@ export function Canvas({ preview }: { preview: boolean }) {
                   position={{ x: l?.x ?? block.x, y: l?.y ?? block.y }}
                   bounds="parent"
                   onDrag={(_, d) => {
+                    // Guides are only a hint while dragging; the snap is applied on release.
                     const s = snapRect(
                       { x: d.x, y: d.y, w: block.w, h: block.h },
                       blocks,
@@ -175,7 +176,6 @@ export function Canvas({ preview }: { preview: boolean }) {
                       surfaceSize
                     );
                     setGuides(s.guides);
-                    setLive({ id: block.id, x: s.x, y: s.y, w: block.w, h: block.h });
                   }}
                   onDragStop={(_, d) => {
                     const s = snapRect(
