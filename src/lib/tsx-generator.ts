@@ -9,6 +9,8 @@ const styleLiteral = (style: Record<string, unknown>) => JSON.stringify(style ??
 
 function attrsLiteral(attrs: Record<string, string>) {
   return Object.entries(attrs ?? {})
+    // Blank values mean the attribute is not set, so it is not emitted.
+    .filter(([, v]) => String(v).trim() !== "")
     .map(([k, v]) =>
       // Values kept as `{expr}` are JSX expressions (handlers, refs, numbers).
       /^\{[\s\S]*\}$/.test(v) ? ` ${k}=${v}` : ` ${k}={${JSON.stringify(v)}}`
