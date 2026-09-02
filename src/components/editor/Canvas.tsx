@@ -351,8 +351,7 @@ export function Canvas({ preview }: { preview: boolean }) {
         onClose={() => setTsxOpen(false)}
         onSave={(v) => {
           updateFileCode(activeFile.id, v);
-          // Reflects hand-written TSX back into the visual blocks.
-          if ((activeFile.blocks ?? []).length === 0) return;
+          // Reflects hand-written TSX back into the visual blocks (even from an empty canvas).
           const parsed = parseComponentTsx(v, activeFile.blocks ?? []);
           lastSignature.current = "";
           setBlocks(activeFile.id, parsed.blocks);
