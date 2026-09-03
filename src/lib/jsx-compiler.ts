@@ -4,6 +4,8 @@
  * never enters the server/SSR bundle).
  */
 import * as React from "react";
+import { FluxoChart } from "@/components/blocks/FluxoChart";
+
 
 type BabelModule = {
   transform: (
@@ -82,6 +84,7 @@ export async function compileComponent(source: string): Promise<CompiledComponen
     "useMemo",
     "useRef",
     "useCallback",
+    "FluxoChart",
     compiled
   );
   const moduleObj = { exports };
@@ -94,8 +97,10 @@ export async function compileComponent(source: string): Promise<CompiledComponen
     React.useEffect,
     React.useMemo,
     React.useRef,
-    React.useCallback
+    React.useCallback,
+    FluxoChart
   );
+
 
   const resolved =
     (exports["default"] as CompiledComponent | undefined) ??

@@ -3,7 +3,7 @@
  * so the visual editor and the component's code stay in sync.
  */
 import type { Block } from "./types";
-import { chartSvg } from "./site-builder";
+import { chartSourceOf } from "./chart-data";
 
 const styleLiteral = (style: Record<string, unknown>) => JSON.stringify(style ?? {});
 
@@ -63,10 +63,15 @@ function inner(block: Block): string {
       )}>${text}</a>`;
     case "chart-bar":
     case "chart-line":
-    case "chart-pie":
-      return `<div style={${styleLiteral(st)}}${a} dangerouslySetInnerHTML={{ __html: ${JSON.stringify(
-        chartSvg(block.kind, block.w, block.h)
-      )} }} />`;
+    case "chart-pie": {
+      const chart = chartSourceOf(block);
+      return `<div style={${styleLiteral(st)}}${a}><FluxoChart kind={${JSON.stringify(
+        block.kind
+      )}} data-source={${JSON.stringify(chart.source)}} data-name-key={${JSON.stringify(
+        chart.nameKey
+      )}} data-value-key={${JSON.stringify(chart.valueKey)}} /></div>`;
+    }
+
     case "react":
       return `<div style={${styleLiteral(st)}}${a}>{/* bloco React aninhado: edite pelo painel de propriedades */}</div>`;
     default:

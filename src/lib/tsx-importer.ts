@@ -49,11 +49,15 @@ export function jsxToHtml(source: string): string {
   let out = source;
   out = out.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "");
   out = out.replace(/dangerouslySetInnerHTML=\{\{[\s\S]*?\}\}/g, "");
+  // `<FluxoChart ... />` is a chart placeholder: keep its data attributes but
+  // turn it into a regular element the HTML parser understands.
+  out = out.replace(/<FluxoChart\b([\s\S]*?)\/>/g, (_, attrs: string) => `<span${attrs}></span>`);
   out = out.replace(/style=\{(\{[\s\S]*?\})\}/g, (_, lit: string) => `style="${objectLiteralToCss(lit).replace(/"/g, "&quot;")}"`);
   out = encodeExpressionAttrs(out);
   out = out.replace(/\{["'`]([^"'`]*)["'`]\}/g, "$1");
   return out;
 }
+
 
 export function parseComponentTsx(source: string, blocks: Block[]) {
   return parsePageHtml(jsxToHtml(source), blocks);
