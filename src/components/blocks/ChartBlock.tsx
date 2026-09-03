@@ -26,16 +26,29 @@ const colors = ["#5da8ff", "#b48cff", "#66d9c2", "#ffb861", "#ff7d9c"];
 export function ChartBlock({
   kind,
   block,
+  source,
+  nameKey,
+  valueKey,
 }: {
   kind: "chart-bar" | "chart-line" | "chart-pie";
   block?: Block;
+  /** Explicit data source (used when the chart lives inside a React component). */
+  source?: string;
+  nameKey?: string;
+  valueKey?: string;
 }) {
   const files = useProject((s) => s.files);
-  const cfg = block
+  const fromBlock = block
     ? chartSourceOf(block)
     : { source: "", nameKey: "name", valueKey: "value" };
+  const cfg = {
+    source: source ?? fromBlock.source,
+    nameKey: nameKey ?? fromBlock.nameKey,
+    valueKey: valueKey ?? fromBlock.valueKey,
+  };
   const [data, setData] = useState<ChartPoint[]>(DEFAULT_CHART_DATA);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     let alive = true;
