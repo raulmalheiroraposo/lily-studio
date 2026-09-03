@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { parseComponentTsx } from "./tsx-importer";
 import type {
   Block,
   BlockKind,
@@ -8,6 +9,27 @@ import type {
 } from "./types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
+
+/**
+ * Imports a component's source code into visual blocks so any code change
+ * (file upload, new component, manual edit) shows up on the canvas.
+ */
+function blocksFromComponentCode(code: string, previous: Block[] = []): Block[] | null {
+  if (typeof window === "undefined" || !code?.trim()) return null;
+  try {
+    const parsed = parseComponentTsx(code, previous);
+    return parsed.blocks.length ? parsed.blocks : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Applies the code + imported blocks to a component file. */
+function withSyncedCode(file: ProjectFile, code: string): ProjectFile {
+  if (file.type !== "component") return { ...file, code };
+  const blocks = blocksFromComponentCode(code, file.blocks ?? []);
+  return { ...file, code, blocks: blocks ?? file.blocks ?? [] };
+}
 
 export const defaultComponentCode = `export default function Componente() {
   const [contador, setContador] = useState(0);
@@ -255,7 +277,10 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                   "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
             : type === "component"
-            ? { id, name: defaultName, type, blocks: [], code: defaultComponentCode }
+            ? withSyncedCode(
+                { id, name: defaultName, type, blocks: [] },
+                defaultComponentCode
+              )
             : { id, name: defaultName, type, blocks: [] };
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
@@ -272,7 +297,8 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
       updateFileCode: (id, code) =>
         track("Editou código", (s) => ({
-          files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+          // Component files also import their code back into visual blocks.
+          files: s.files.map((f) => (f.id === id ? withSyncedCode(f, code) : f)),
         })),
       setGeneratedCode: (id, code) =>
         set((s) => ({

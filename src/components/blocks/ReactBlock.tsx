@@ -52,7 +52,7 @@ export function ReactBlock({
   }
 
   return (
-    <div className="h-full w-full overflow-auto" {...(eventHandlers ?? {})}>
+    <div className="fluxo-native h-full w-full overflow-auto" {...(eventHandlers ?? {})}>
       {Comp ? (
         <Boundary onError={setError}>
           <Comp />

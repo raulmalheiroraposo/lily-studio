@@ -3,6 +3,7 @@ import { Trash2, Plus, Code2, FolderOpen, Save } from "lucide-react";
 import { useProject, defaultComponentCode } from "@/lib/project-store";
 import { CodeEditorModal } from "./CodeEditorModal";
 import { listScriptFunctions } from "@/lib/script-runtime";
+import { attrsForKind, isKnownAttr } from "@/lib/html-attributes";
 import type { EventBinding } from "@/lib/types";
 
 const EVENTS = ["onClick", "onChange", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onSubmit", "onLoad"];
@@ -223,11 +224,59 @@ export function PropertiesPanel() {
         {tab === "attrs" && (
           <>
             <div className="text-[11px] text-muted-foreground">
-              Atributos HTML dinâmicos aplicados diretamente à tag do componente (ex.: <code>id</code>, <code>data-*</code>, <code>aria-*</code>, <code>title</code>).
+              Atributos aceitos por esta tag. Valores em branco não são incluídos no código; atributos
+              obrigatórios estão marcados com <span className="text-destructive">*</span>.
+            </div>
+            <div className="space-y-2 rounded border border-border p-2">
+              {attrsForKind(block.kind).map((spec) => {
+                const current = block.attrs?.[spec.name];
+                const value = current ?? spec.default ?? "";
+                const set = (v: string) => {
+                  const next = { ...(block.attrs ?? {}) };
+                  if (v === "") delete next[spec.name];
+                  else next[spec.name] = v;
+                  updateBlock(block.id, { attrs: next });
+                };
+                return (
+                  <Field
+                    key={spec.name}
+                    label={`${spec.name}${spec.required ? " *" : ""}${
+                      spec.default ? ` (padrão: ${spec.default})` : ""
+                    }`}
+                  >
+                    {spec.options ? (
+                      <select
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                        className="w-full rounded border border-border bg-input px-2 py-1"
+                      >
+                        {spec.options.map((o) => (
+                          <option key={o} value={o}>
+                            {o === "" ? "— não incluir —" : o}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={spec.kind === "number" ? "number" : "text"}
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                        className="w-full rounded border border-border bg-input px-2 py-1"
+                      />
+                    )}
+                  </Field>
+                );
+              })}
+            </div>
+
+            <div className="pt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Atributos personalizados (data-*, aria-*, expressões)
             </div>
             <div className="space-y-1">
-              {Object.entries(block.attrs ?? {}).map(([k, v]) => (
-                <div key={k} className="flex items-center gap-2">
+              {Object.entries(block.attrs ?? {})
+                .filter(([k]) => !isKnownAttr(block.kind, k))
+                .map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-2">
                   <input
                     value={k}
                     onChange={(e) => {
@@ -254,9 +303,9 @@ export function PropertiesPanel() {
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
-              ))}
-              {Object.keys(block.attrs ?? {}).length === 0 && (
-                <div className="italic text-muted-foreground">Nenhum atributo dinâmico.</div>
+                ))}
+              {Object.keys(block.attrs ?? {}).filter((k) => !isKnownAttr(block.kind, k)).length === 0 && (
+                <div className="italic text-muted-foreground">Nenhum atributo personalizado.</div>
               )}
             </div>
             <div className="mt-2 space-y-2 rounded border border-dashed border-border p-2">

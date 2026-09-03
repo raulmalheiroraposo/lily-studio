@@ -147,3 +147,37 @@
     color: var(--color-foreground);
   }
 }
+
+/*
+ * User-authored React blocks render inside the editor, where Tailwind's
+ * preflight strips native styling (invisible buttons, borderless inputs...).
+ * `all: revert` restores the browser defaults for those elements while any
+ * inline style written by the user still wins.
+ */
+.fluxo-native button,
+.fluxo-native input,
+.fluxo-native select,
+.fluxo-native textarea,
+.fluxo-native fieldset,
+.fluxo-native legend,
+.fluxo-native a,
+.fluxo-native ul,
+.fluxo-native ol,
+.fluxo-native li,
+.fluxo-native table,
+.fluxo-native th,
+.fluxo-native td,
+.fluxo-native h1,
+.fluxo-native h2,
+.fluxo-native h3,
+.fluxo-native h4,
+.fluxo-native h5,
+.fluxo-native h6,
+.fluxo-native p,
+.fluxo-native blockquote,
+.fluxo-native pre,
+.fluxo-native hr,
+.fluxo-native progress,
+.fluxo-native meter {
+  all: revert;
+}
