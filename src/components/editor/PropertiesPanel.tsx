@@ -3,6 +3,7 @@ import { Trash2, Plus, Code2, FolderOpen, Save } from "lucide-react";
 import { useProject, defaultComponentCode } from "@/lib/project-store";
 import { CodeEditorModal } from "./CodeEditorModal";
 import { listScriptFunctions } from "@/lib/script-runtime";
+import { attrsForKind, isKnownAttr } from "@/lib/html-attributes";
 import type { EventBinding } from "@/lib/types";
 
 const EVENTS = ["onClick", "onChange", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onSubmit", "onLoad"];
@@ -275,7 +276,7 @@ export function PropertiesPanel() {
               {Object.entries(block.attrs ?? {})
                 .filter(([k]) => !isKnownAttr(block.kind, k))
                 .map(([k, v]) => (
-                <div key={k} className="flex items-center gap-2">
+                  <div key={k} className="flex items-center gap-2">
                   <input
                     value={k}
                     onChange={(e) => {
@@ -302,9 +303,9 @@ export function PropertiesPanel() {
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
-              ))}
-              {Object.keys(block.attrs ?? {}).length === 0 && (
-                <div className="italic text-muted-foreground">Nenhum atributo dinâmico.</div>
+                ))}
+              {Object.keys(block.attrs ?? {}).filter((k) => !isKnownAttr(block.kind, k)).length === 0 && (
+                <div className="italic text-muted-foreground">Nenhum atributo personalizado.</div>
               )}
             </div>
             <div className="mt-2 space-y-2 rounded border border-dashed border-border p-2">
