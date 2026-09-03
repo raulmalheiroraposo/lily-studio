@@ -277,7 +277,10 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                   "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
             : type === "component"
-            ? { id, name: defaultName, type, blocks: [], code: defaultComponentCode }
+            ? withSyncedCode(
+                { id, name: defaultName, type, blocks: [] },
+                defaultComponentCode
+              )
             : { id, name: defaultName, type, blocks: [] };
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
@@ -294,7 +297,8 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
       updateFileCode: (id, code) =>
         track("Editou código", (s) => ({
-          files: s.files.map((f) => (f.id === id ? { ...f, code } : f)),
+          // Component files also import their code back into visual blocks.
+          files: s.files.map((f) => (f.id === id ? withSyncedCode(f, code) : f)),
         })),
       setGeneratedCode: (id, code) =>
         set((s) => ({
