@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { parseComponentTsx } from "./tsx-importer";
 import type {
   Block,
   BlockKind,
@@ -8,6 +9,27 @@ import type {
 } from "./types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
+
+/**
+ * Imports a component's source code into visual blocks so any code change
+ * (file upload, new component, manual edit) shows up on the canvas.
+ */
+function blocksFromComponentCode(code: string, previous: Block[] = []): Block[] | null {
+  if (typeof window === "undefined" || !code?.trim()) return null;
+  try {
+    const parsed = parseComponentTsx(code, previous);
+    return parsed.blocks.length ? parsed.blocks : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Applies the code + imported blocks to a component file. */
+function withSyncedCode(file: ProjectFile, code: string): ProjectFile {
+  if (file.type !== "component") return { ...file, code };
+  const blocks = blocksFromComponentCode(code, file.blocks ?? []);
+  return { ...file, code, blocks: blocks ?? file.blocks ?? [] };
+}
 
 export const defaultComponentCode = `export default function Componente() {
   const [contador, setContador] = useState(0);
