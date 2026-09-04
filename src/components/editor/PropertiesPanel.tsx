@@ -95,7 +95,7 @@ export function PropertiesPanel() {
             ))}
             {block.kind.startsWith("chart-") && (
               <>
-                <Field label="Fonte de dados (JSON, URL ou função de script)">
+                <Field label="Fonte de dados do gráfico (JSON, URL ou função de script)">
                   <input
                     value={String(block.props.dataSource ?? "")}
                     placeholder='[{"name":"Jan","value":40}] · /api/vendas · carregarVendas'
