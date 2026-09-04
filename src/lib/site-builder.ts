@@ -288,13 +288,19 @@ const BASE_RUNTIME_JS = String.raw`(function () {
       var exports = {};
       var React = window.React;
       var fn = new Function(
-        "React", "exports", "module", "require", "useState", "useEffect", "useMemo", "useRef", "useCallback",
+        "React", "exports", "module", "require", "useState", "useEffect", "useMemo", "useRef", "useCallback", "FluxoChart",
         out.code
       );
       fn(React, exports, { exports: exports }, function (name) {
         if (name === "react") return React;
         throw new Error('Import não suportado: "' + name + '"');
-      }, React.useState, React.useEffect, React.useMemo, React.useRef, React.useCallback);
+      }, React.useState, React.useEffect, React.useMemo, React.useRef, React.useCallback,
+      function FluxoChart(props) {
+        return window.__fluxoChartComponent
+          ? React.createElement(window.__fluxoChartComponent, props)
+          : null;
+      });
+
       var Comp = exports["default"];
       if (!Comp) {
         for (var k in exports) if (typeof exports[k] === "function") { Comp = exports[k]; break; }
