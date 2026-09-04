@@ -420,7 +420,42 @@ const CHART_RUNTIME_JS = `(function () {
       if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
     }
   });
+
+  // Chart component available to compiled React blocks (<FluxoChart />).
+  window.__fluxoChartComponent = function (props) {
+    var React = window.React;
+    var ref = React.useRef(null);
+    var kind = props.kind || props["data-chart"] || "chart-bar";
+    var source = props.source || props["data-source"] || props.dataSource || "";
+    var nameKey = props.nameKey || props["data-name-key"] || "name";
+    var valueKey = props.valueKey || props["data-value-key"] || "value";
+    React.useEffect(function () {
+      var el = ref.current;
+      if (!el) return;
+      var w = el.clientWidth || 320;
+      var h = el.clientHeight || 200;
+      function paint(data) {
+        el.innerHTML = renderChartSvg(kind, w, h, data && data.length ? data : FALLBACK, COLORS);
+      }
+      paint(null);
+      if (!source) return;
+      try {
+        Promise.resolve(resolve(source))
+          .then(function (raw) { paint(normalize(raw, nameKey, valueKey)); })
+          .catch(function (err) {
+            if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+          });
+      } catch (err) {
+        if (window.__fluxoLog) window.__fluxoLog("error", "grafico", String(err && err.message ? err.message : err));
+      }
+    }, [kind, source, nameKey, valueKey]);
+    return React.createElement("div", {
+      ref: ref,
+      style: Object.assign({ width: "100%", height: "100%" }, props.style || {}),
+    });
+  };
 })();
 `;
 
-export const SITE_RUNTIME_JS = `${BASE_RUNTIME_JS}\n${CHART_RUNTIME_JS}`;
+export const SITE_RUNTIME_JS = `${CHART_RUNTIME_JS}\n${BASE_RUNTIME_JS}`;
+
