@@ -160,7 +160,23 @@ export function parsePageHtml(
       patch.style = read.style;
       patch.props = { ...block.props, ...read.props };
       patch.attrs = read.attrs;
+      // Charts inside React components render through a `<FluxoChart />`
+      // placeholder: keep its data source in sync with the block props.
+      if (block.kind.startsWith("chart-")) {
+        const holder = inner.matches("[data-source]")
+          ? inner
+          : (inner.querySelector("[data-source]") as HTMLElement | null);
+        if (holder) {
+          patch.props = {
+            ...patch.props,
+            dataSource: holder.getAttribute("data-source") ?? "",
+            nameKey: holder.getAttribute("data-name-key") || "name",
+            valueKey: holder.getAttribute("data-value-key") || "value",
+          };
+        }
+      }
     }
+
     patches[block.id] = patch;
   }
 
