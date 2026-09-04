@@ -95,7 +95,7 @@ export function PropertiesPanel() {
             ))}
             {block.kind.startsWith("chart-") && (
               <>
-                <Field label="Fonte de dados (JSON, URL ou função de script)">
+                <Field label="Fonte de dados do gráfico (JSON, URL ou função de script)">
                   <input
                     value={String(block.props.dataSource ?? "")}
                     placeholder='[{"name":"Jan","value":40}] · /api/vendas · carregarVendas'
@@ -274,7 +274,7 @@ export function PropertiesPanel() {
             </div>
             <div className="space-y-1">
               {Object.entries(block.attrs ?? {})
-                .filter(([k]) => !isKnownAttr(block.kind, k))
+                .filter(([k]) => !isKnownAttr(block.kind, k) && !(block.kind.startsWith("chart-") && ["data-source", "data-name-key", "data-value-key"].includes(k)))
                 .map(([k, v]) => (
                   <div key={k} className="flex items-center gap-2">
                   <input
@@ -304,7 +304,7 @@ export function PropertiesPanel() {
                   </button>
                 </div>
                 ))}
-              {Object.keys(block.attrs ?? {}).filter((k) => !isKnownAttr(block.kind, k)).length === 0 && (
+              {Object.keys(block.attrs ?? {}).filter((k) => !isKnownAttr(block.kind, k) && !(block.kind.startsWith("chart-") && ["data-source", "data-name-key", "data-value-key"].includes(k))).length === 0 && (
                 <div className="italic text-muted-foreground">Nenhum atributo personalizado.</div>
               )}
             </div>
