@@ -52,10 +52,31 @@ function wrap(source: string) {
   return `function Componente(props) {\n${src}\n}\nexport default Componente;`;
 }
 
-export async function compileComponent(source: string): Promise<CompiledComponent> {
-  const key = source;
+/** `import Contador from "./Contador"` -> tag names the source depends on. */
+function importedTags(source: string): string[] {
+  const out: string[] = [];
+  const re = /import\s+([A-Za-z_$][\w$]*)\s+from\s+["'][^"']*["']/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source))) out.push(m[1]);
+  return out;
+}
+
+export async function compileComponent(
+  source: string,
+  /** Map of tag -> source code for components referenced by this one. */
+  components: Record<string, string> = {},
+  stack: string[] = []
+): Promise<CompiledComponent> {
+  const deps = importedTags(source).filter((t) => components[t] && !stack.includes(t));
+  const key = `${source}\u0000${deps.map((t) => `${t}:${components[t]}`).join("\u0000")}`;
   const cached = cache.get(key);
   if (cached) return cached;
+
+  // Nested components are compiled first so the parent can reference them.
+  const resolvedDeps: Record<string, CompiledComponent> = {};
+  for (const tag of deps) {
+    resolvedDeps[tag] = await compileComponent(components[tag], components, [...stack, tag]);
+  }
 
   const Babel = await getBabel();
   // Imports cannot be resolved at runtime; React/hooks are injected in scope.
@@ -74,6 +95,7 @@ export async function compileComponent(source: string): Promise<CompiledComponen
     if (name === "react") return React;
     throw new Error(`Import não suportado no preview: "${name}"`);
   };
+  const depNames = Object.keys(resolvedDeps);
   const fn = new Function(
     "React",
     "exports",
@@ -85,6 +107,7 @@ export async function compileComponent(source: string): Promise<CompiledComponen
     "useRef",
     "useCallback",
     "FluxoChart",
+    ...depNames,
     compiled
   );
   const moduleObj = { exports };
@@ -98,8 +121,10 @@ export async function compileComponent(source: string): Promise<CompiledComponen
     React.useMemo,
     React.useRef,
     React.useCallback,
-    FluxoChart
+    FluxoChart,
+    ...depNames.map((n) => resolvedDeps[n])
   );
+
 
 
   const resolved =

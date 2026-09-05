@@ -35,7 +35,7 @@ function mergeAttrs(
   return out;
 }
 
-function inner(block: Block): string {
+function inner(block: Block, tags: Record<string, string> = {}): string {
   const st = { width: "100%", height: "100%", ...(block.style ?? {}) };
   const own = block.attrs ?? {};
   const a = attrsLiteral(own);
@@ -72,8 +72,14 @@ function inner(block: Block): string {
       )}} data-value-key={${JSON.stringify(chart.valueKey)}} /></div>`;
     }
 
-    case "react":
-      return `<div style={${styleLiteral(st)}}${a}>{/* bloco React aninhado: edite pelo painel de propriedades */}</div>`;
+    case "react": {
+      // Nested React components live in their own .tsx file and are reused here
+      // through their tag (e.g. `<Contador />`).
+      const tag = block.sourceFileId ? tags[block.sourceFileId] : undefined;
+      if (tag) return `<div style={${styleLiteral(st)}}${a}><${tag} /></div>`;
+      return `<div style={${styleLiteral(st)}}${a}>{/* bloco React sem arquivo vinculado */}</div>`;
+    }
+
     default:
       return `<div style={${styleLiteral({ borderRadius: "6px", ...st })}}${a}>${text}</div>`;
   }
@@ -124,7 +130,9 @@ export function extractTsxShell(source: string): TsxShell {
 export function blocksToTsx(
   componentName: string,
   blocks: Block[],
-  previousCode?: string
+  previousCode?: string,
+  /** Map of component fileId -> JSX tag, for nested React components. */
+  componentTags: Record<string, string> = {}
 ): string {
   const safeName = (componentName.replace(/\.[jt]sx?$/i, "").replace(/[^A-Za-z0-9_]/g, "") || "Componente")
     .replace(/^[0-9]/, "C$&");
@@ -139,12 +147,28 @@ export function blocksToTsx(
           top: `${b.y}px`,
           width: `${b.w}px`,
           height: `${b.h}px`,
-        })}}>\n        ${inner(b)}\n      </div>`
+        })}}>\n        ${inner(b, componentTags)}\n      </div>`
     )
     .join("\n");
-  const head = shell.head ? `${shell.head}\n\n` : "";
+  // Imports for every nested component actually used by the blocks.
+  const usedTags = Array.from(
+    new Set(
+      blocks
+        .filter((b) => b.kind === "react" && b.sourceFileId)
+        .map((b) => componentTags[b.sourceFileId as string])
+        .filter((t): t is string => !!t)
+    )
+  );
+  const headBase = shell.head;
+  const imports = usedTags
+    .filter((t) => !new RegExp(`import\\s+${t}\\b`).test(headBase))
+    .map((t) => `import ${t} from "./${t}";`)
+    .join("\n");
+  const headParts = [imports, headBase].filter(Boolean).join("\n");
+  const head = headParts ? `${headParts}\n\n` : "";
   const prelude = shell.prelude ? `${shell.prelude}\n\n` : "";
   const tail = shell.tail ? `\n${shell.tail}\n` : "";
+
   return `${head}export default function ${shell.name || safeName}() {
 ${prelude}
   return (

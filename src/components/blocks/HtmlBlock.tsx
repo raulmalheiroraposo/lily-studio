@@ -6,11 +6,14 @@ export function BlockRenderer({
   block,
   eventHandlers,
   resolvedCode,
+  components,
 }: {
   block: Block;
   eventHandlers?: Record<string, (e: unknown) => void>;
   resolvedCode?: string;
+  components?: Record<string, string>;
 }) {
+
   const style: React.CSSProperties = {
     width: "100%",
     height: "100%",
@@ -100,7 +103,14 @@ export function BlockRenderer({
         </div>
       );
     case "react":
-      return <ReactBlock code={resolvedCode ?? block.code ?? ""} eventHandlers={handlers} />;
+      return (
+        <ReactBlock
+          code={resolvedCode ?? block.code ?? ""}
+          eventHandlers={handlers}
+          components={components}
+        />
+      );
+
     case "section":
     case "div":
     default:

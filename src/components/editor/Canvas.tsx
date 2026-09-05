@@ -10,6 +10,7 @@ import { runBinding } from "@/lib/script-runtime";
 import { ReactBlock } from "@/components/blocks/ReactBlock";
 import { blocksToTsx } from "@/lib/tsx-generator";
 import { parseComponentTsx } from "@/lib/tsx-importer";
+import { componentSources, componentTagMap, tagToFileId } from "@/lib/component-refs";
 import type { Block } from "@/lib/types";
 import { snapRect, snapResize, type Guides } from "@/lib/snap";
 
@@ -44,6 +45,10 @@ export function Canvas({ preview }: { preview: boolean }) {
     setSurfaceSize({ w: el.clientWidth, h: el.clientHeight });
     return () => ro.disconnect();
   }, [activeFile?.id]);
+
+  const compTags = componentTagMap(files);
+  const compSources = componentSources(files);
+  const tagIds = tagToFileId(files);
 
   const resolveCode = useCallback(
     (block: { code?: string; sourceFileId?: string }) =>
@@ -83,7 +88,7 @@ export function Canvas({ preview }: { preview: boolean }) {
     hydratedFor.current = activeFile.id;
     const code = activeFile.code ?? "";
     if (!code.trim() || (activeFile.blocks ?? []).length > 0) return;
-    const parsed = parseComponentTsx(code, []);
+    const parsed = parseComponentTsx(code, [], tagIds);
     if (parsed.blocks.length) {
       lastSignature.current = JSON.stringify(parsed.blocks);
       setBlocks(activeFile.id, parsed.blocks);
@@ -96,7 +101,7 @@ export function Canvas({ preview }: { preview: boolean }) {
     lastSignature.current = signature;
     setGeneratedCode(
       activeFile.id,
-      blocksToTsx(activeFile.name, blocks, activeFile.code ?? "")
+      blocksToTsx(activeFile.name, blocks, activeFile.code ?? "", compTags)
     );
   }, [isComponent, signature, activeFile, blocks, setGeneratedCode]);
 
@@ -139,6 +144,7 @@ export function Canvas({ preview }: { preview: boolean }) {
       block={block}
       eventHandlers={preview ? buildHandlers(block) : undefined}
       resolvedCode={resolveCode(block)}
+      components={compSources}
     />
   );
 
@@ -158,7 +164,7 @@ export function Canvas({ preview }: { preview: boolean }) {
       >
         {preview && isComponent ? (
           <div className="absolute inset-0 p-4">
-            <ReactBlock code={activeFile.code ?? ""} />
+            <ReactBlock code={activeFile.code ?? ""} components={compSources} />
           </div>
         ) : preview
           ? blocks.map((block) => (
@@ -352,7 +358,7 @@ export function Canvas({ preview }: { preview: boolean }) {
         onSave={(v) => {
           updateFileCode(activeFile.id, v);
           // Reflects hand-written TSX back into the visual blocks (even from an empty canvas).
-          const parsed = parseComponentTsx(v, activeFile.blocks ?? []);
+          const parsed = parseComponentTsx(v, activeFile.blocks ?? [], tagIds);
           lastSignature.current = "";
           setBlocks(activeFile.id, parsed.blocks);
         }}

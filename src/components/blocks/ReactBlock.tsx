@@ -20,17 +20,21 @@ class Boundary extends Component<{ children: ReactNode; onError: (m: string) => 
 export function ReactBlock({
   code,
   eventHandlers,
+  components,
 }: {
   code: string;
   eventHandlers?: Record<string, (e: unknown) => void>;
+  /** Map of tag -> source code of other components this one can reuse. */
+  components?: Record<string, string>;
 }) {
   const [Comp, setComp] = useState<CompiledComponent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const depsKey = JSON.stringify(components ?? {});
 
   useEffect(() => {
     let alive = true;
     setError(null);
-    compileComponent(code)
+    compileComponent(code, components ?? {})
       .then((c) => alive && setComp(() => c))
       .catch((e: unknown) => {
         if (!alive) return;
@@ -40,7 +44,9 @@ export function ReactBlock({
     return () => {
       alive = false;
     };
-  }, [code]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, depsKey]);
+
 
   if (error) {
     return (

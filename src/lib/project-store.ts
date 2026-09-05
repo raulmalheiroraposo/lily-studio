@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { parseComponentTsx } from "./tsx-importer";
+import { tagToFileId } from "./component-refs";
 import type {
   Block,
   BlockKind,
@@ -14,10 +15,14 @@ const uid = () => Math.random().toString(36).slice(2, 10);
  * Imports a component's source code into visual blocks so any code change
  * (file upload, new component, manual edit) shows up on the canvas.
  */
-function blocksFromComponentCode(code: string, previous: Block[] = []): Block[] | null {
+function blocksFromComponentCode(
+  code: string,
+  previous: Block[] = [],
+  files: ProjectFile[] = []
+): Block[] | null {
   if (typeof window === "undefined" || !code?.trim()) return null;
   try {
-    const parsed = parseComponentTsx(code, previous);
+    const parsed = parseComponentTsx(code, previous, tagToFileId(files));
     return parsed.blocks.length ? parsed.blocks : null;
   } catch {
     return null;
@@ -25,9 +30,9 @@ function blocksFromComponentCode(code: string, previous: Block[] = []): Block[] 
 }
 
 /** Applies the code + imported blocks to a component file. */
-function withSyncedCode(file: ProjectFile, code: string): ProjectFile {
+function withSyncedCode(file: ProjectFile, code: string, files: ProjectFile[] = []): ProjectFile {
   if (file.type !== "component") return { ...file, code };
-  const blocks = blocksFromComponentCode(code, file.blocks ?? []);
+  const blocks = blocksFromComponentCode(code, file.blocks ?? [], files);
   return { ...file, code, blocks: blocks ?? file.blocks ?? [] };
 }
 
@@ -298,7 +303,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       updateFileCode: (id, code) =>
         track("Editou código", (s) => ({
           // Component files also import their code back into visual blocks.
-          files: s.files.map((f) => (f.id === id ? withSyncedCode(f, code) : f)),
+          files: s.files.map((f) => (f.id === id ? withSyncedCode(f, code, s.files) : f)),
         })),
       setGeneratedCode: (id, code) =>
         set((s) => ({
@@ -316,8 +321,18 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         const file = files.find((f) => f.id === activeFileId);
         if (!file || file.type === "script") return;
         const block = defaultBlockFor(kind);
+        // A React component nested inside another React component gets its own
+        // .tsx file, referenced by tag in the parent, so it can be reused.
+        let extraFile: ProjectFile | null = null;
+        if (kind === "react" && file.type === "component") {
+          const id = uid();
+          const name = `Componente${files.filter((f) => f.type === "component").length + 1}.tsx`;
+          extraFile = withSyncedCode({ id, name, type: "component", blocks: [] }, defaultComponentCode, files);
+          block.sourceFileId = id;
+          block.code = undefined;
+        }
         track(`Adicionou ${kind}`, (s) => ({
-          files: s.files.map((f) =>
+          files: [...s.files, ...(extraFile ? [extraFile] : [])].map((f) =>
             f.id === activeFileId ? { ...f, blocks: [...(f.blocks ?? []), block] } : f
           ),
           selectedBlockId: block.id,
