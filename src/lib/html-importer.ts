@@ -103,7 +103,8 @@ const PROPS_BY_KIND: Record<string, string[]> = {
 };
 
 function blockFromElement(inner: HTMLElement, layout: { x: number; y: number; w: number; h: number }): Block {
-  const kind = KIND_BY_TAG[inner.tagName] ?? "div";
+  const reactFile = inner.getAttribute("data-react-file");
+  const kind = reactFile ? "react" : KIND_BY_TAG[inner.tagName] ?? "div";
   const known = PROPS_BY_KIND[kind] ?? [];
   const { text, style, attrs, props } = readInner(inner, known);
   return {
@@ -116,10 +117,12 @@ function blockFromElement(inner: HTMLElement, layout: { x: number; y: number; w:
     props,
     style,
     attrs,
-    text: kind === "input" || kind === "image" ? undefined : text,
+    text: kind === "input" || kind === "image" || kind === "react" ? undefined : text,
     events: [],
+    ...(reactFile ? { sourceFileId: reactFile } : {}),
   };
 }
+
 
 /**
  * Two-way sync between source code and blocks: existing blocks (matched by
