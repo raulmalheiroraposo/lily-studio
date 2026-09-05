@@ -130,7 +130,9 @@ export function extractTsxShell(source: string): TsxShell {
 export function blocksToTsx(
   componentName: string,
   blocks: Block[],
-  previousCode?: string
+  previousCode?: string,
+  /** Map of component fileId -> JSX tag, for nested React components. */
+  componentTags: Record<string, string> = {}
 ): string {
   const safeName = (componentName.replace(/\.[jt]sx?$/i, "").replace(/[^A-Za-z0-9_]/g, "") || "Componente")
     .replace(/^[0-9]/, "C$&");
@@ -145,12 +147,28 @@ export function blocksToTsx(
           top: `${b.y}px`,
           width: `${b.w}px`,
           height: `${b.h}px`,
-        })}}>\n        ${inner(b)}\n      </div>`
+        })}}>\n        ${inner(b, componentTags)}\n      </div>`
     )
     .join("\n");
-  const head = shell.head ? `${shell.head}\n\n` : "";
+  // Imports for every nested component actually used by the blocks.
+  const usedTags = Array.from(
+    new Set(
+      blocks
+        .filter((b) => b.kind === "react" && b.sourceFileId)
+        .map((b) => componentTags[b.sourceFileId as string])
+        .filter((t): t is string => !!t)
+    )
+  );
+  const headBase = shell.head;
+  const imports = usedTags
+    .filter((t) => !new RegExp(`import\\s+${t}\\b`).test(headBase))
+    .map((t) => `import ${t} from "./${t}";`)
+    .join("\n");
+  const headParts = [imports, headBase].filter(Boolean).join("\n");
+  const head = headParts ? `${headParts}\n\n` : "";
   const prelude = shell.prelude ? `${shell.prelude}\n\n` : "";
   const tail = shell.tail ? `\n${shell.tail}\n` : "";
+
   return `${head}export default function ${shell.name || safeName}() {
 ${prelude}
   return (
