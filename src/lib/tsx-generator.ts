@@ -35,7 +35,7 @@ function mergeAttrs(
   return out;
 }
 
-function inner(block: Block): string {
+function inner(block: Block, tags: Record<string, string> = {}): string {
   const st = { width: "100%", height: "100%", ...(block.style ?? {}) };
   const own = block.attrs ?? {};
   const a = attrsLiteral(own);
