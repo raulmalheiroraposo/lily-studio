@@ -103,7 +103,14 @@ export function BlockRenderer({
         </div>
       );
     case "react":
-      return <ReactBlock code={resolvedCode ?? block.code ?? ""} eventHandlers={handlers} />;
+      return (
+        <ReactBlock
+          code={resolvedCode ?? block.code ?? ""}
+          eventHandlers={handlers}
+          components={components}
+        />
+      );
+
     case "section":
     case "div":
     default:
