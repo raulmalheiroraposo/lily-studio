@@ -6,11 +6,14 @@ export function BlockRenderer({
   block,
   eventHandlers,
   resolvedCode,
+  components,
 }: {
   block: Block;
   eventHandlers?: Record<string, (e: unknown) => void>;
   resolvedCode?: string;
+  components?: Record<string, string>;
 }) {
+
   const style: React.CSSProperties = {
     width: "100%",
     height: "100%",
