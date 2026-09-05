@@ -84,15 +84,18 @@ export function PropertiesPanel() {
                 />
               </Field>
             )}
-            {Object.entries(block.props).map(([k, v]) => (
-              <Field key={k} label={k}>
-                <input
-                  value={String(v)}
-                  onChange={(e) => updateBlock(block.id, { props: { ...block.props, [k]: e.target.value } })}
-                  className="w-full rounded border border-border bg-input px-2 py-1"
-                />
-              </Field>
-            ))}
+            {Object.entries(block.props)
+              .filter(([k]) => !(block.kind.startsWith("chart-") && ["dataSource", "nameKey", "valueKey"].includes(k)))
+              .map(([k, v]) => (
+                <Field key={k} label={k}>
+                  <input
+                    value={String(v)}
+                    onChange={(e) => updateBlock(block.id, { props: { ...block.props, [k]: e.target.value } })}
+                    className="w-full rounded border border-border bg-input px-2 py-1"
+                  />
+                </Field>
+              ))}
+
             {block.kind.startsWith("chart-") && (
               <>
                 <Field label="Fonte de dados do gráfico (JSON, URL ou função de script)">
