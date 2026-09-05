@@ -45,13 +45,21 @@ function objectLiteralToCss(literal: string): string {
 }
 
 /** Turns generated/hand-written JSX into HTML that the block parser understands. */
-export function jsxToHtml(source: string): string {
+export function jsxToHtml(source: string, tagFileIds: Record<string, string> = {}): string {
   let out = source;
   out = out.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "");
   out = out.replace(/dangerouslySetInnerHTML=\{\{[\s\S]*?\}\}/g, "");
   // `<FluxoChart ... />` is a chart placeholder: keep its data attributes but
   // turn it into a regular element the HTML parser understands.
   out = out.replace(/<FluxoChart\b([\s\S]*?)\/>/g, (_, attrs: string) => `<span${attrs}></span>`);
+  // Referenced components (`<Contador />`) become react blocks linked to the file.
+  out = out.replace(
+    /<([A-Z][A-Za-z0-9_]*)\b[^>]*?(?:\/>|>[\s\S]*?<\/\1>)/g,
+    (full, tag: string) => {
+      const fileId = tagFileIds[tag];
+      return fileId ? `<span data-react-file="${fileId}"></span>` : full;
+    }
+  );
   out = out.replace(/style=\{(\{[\s\S]*?\})\}/g, (_, lit: string) => `style="${objectLiteralToCss(lit).replace(/"/g, "&quot;")}"`);
   out = encodeExpressionAttrs(out);
   out = out.replace(/\{["'`]([^"'`]*)["'`]\}/g, "$1");
@@ -59,6 +67,11 @@ export function jsxToHtml(source: string): string {
 }
 
 
-export function parseComponentTsx(source: string, blocks: Block[]) {
-  return parsePageHtml(jsxToHtml(source), blocks);
+export function parseComponentTsx(
+  source: string,
+  blocks: Block[],
+  tagFileIds: Record<string, string> = {}
+) {
+  return parsePageHtml(jsxToHtml(source, tagFileIds), blocks);
 }
+
