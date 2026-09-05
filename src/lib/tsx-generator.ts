@@ -72,8 +72,14 @@ function inner(block: Block): string {
       )}} data-value-key={${JSON.stringify(chart.valueKey)}} /></div>`;
     }
 
-    case "react":
-      return `<div style={${styleLiteral(st)}}${a}>{/* bloco React aninhado: edite pelo painel de propriedades */}</div>`;
+    case "react": {
+      // Nested React components live in their own .tsx file and are reused here
+      // through their tag (e.g. `<Contador />`).
+      const tag = block.sourceFileId ? tags[block.sourceFileId] : undefined;
+      if (tag) return `<div style={${styleLiteral(st)}}${a}><${tag} /></div>`;
+      return `<div style={${styleLiteral(st)}}${a}>{/* bloco React sem arquivo vinculado */}</div>`;
+    }
+
     default:
       return `<div style={${styleLiteral({ borderRadius: "6px", ...st })}}${a}>${text}</div>`;
   }
