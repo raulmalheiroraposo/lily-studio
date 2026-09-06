@@ -266,7 +266,7 @@ const BASE_RUNTIME_JS = String.raw`(function () {
   });
 
   // Compiles a component source, resolving imports of other components
-  // (`import Contador from "./Contador"`) from the exported registry.
+  // (import Contador from "./Contador") from the exported registry.
   function compileFluxoComponent(source, stack) {
     var React = window.React;
     var registry = window.__FLUXO_COMPONENTS__ || {};
