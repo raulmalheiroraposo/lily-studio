@@ -1,5 +1,6 @@
 import type { Block, ProjectFile } from "./types";
 import { DEFAULT_CHART_DATA, type ChartPoint } from "./chart-data";
+import { componentSources } from "./component-refs";
 
 const CHART_COLORS = ["#5da8ff", "#b48cff", "#66d9c2", "#ffb861", "#ff7d9c"];
 
@@ -225,7 +226,8 @@ ${blocks}
 <div id="fs-log" hidden><header><span>Logs</span><button type="button" id="fs-log-clear">limpar</button></header><ul id="fs-log-list"></ul></div>
 ${vendor}
 ${scripts.map((s) => `  <script src="scripts/${scriptFileName(s)}"></script>`).join("\n")}
-  <script>window.__FLUXO_BINDINGS__ = ${JSON.stringify(bindings)};</script>
+  <script>window.__FLUXO_BINDINGS__ = ${JSON.stringify(bindings)};
+  window.__FLUXO_COMPONENTS__ = ${JSON.stringify(componentSources(files))};</script>
   <script src="runtime.js"></script>
 </body>
 </html>
@@ -263,6 +265,50 @@ const BASE_RUNTIME_JS = String.raw`(function () {
     log("error", "promise", String(e.reason && e.reason.message ? e.reason.message : e.reason));
   });
 
+  // Compiles a component source, resolving imports of other components
+  // (`import Contador from "./Contador"`) from the exported registry.
+  function compileFluxoComponent(source, stack) {
+    var React = window.React;
+    var registry = window.__FLUXO_COMPONENTS__ || {};
+    var src = String(source || "").trim();
+    var deps = [];
+    var re = /import\s+([A-Za-z_$][\w$]*)\s+from\s+["'][^"']*["']/g;
+    var m;
+    while ((m = re.exec(src))) {
+      if (registry[m[1]] && stack.indexOf(m[1]) < 0) deps.push(m[1]);
+    }
+    var depValues = deps.map(function (tag) {
+      return compileFluxoComponent(registry[tag], stack.concat([tag]));
+    });
+    src = src.replace(/^\s*import\s[^\n]*\n?/gm, "");
+    var hasModule = /(^|\n)\s*export\s+(default|function|const|class)/.test(src);
+    if (!hasModule) src = "function Componente(props) {\n" + src + "\n}\nexport default Componente;";
+    var out = window.Babel.transform(src, {
+      filename: "component.tsx",
+      presets: [["react", { runtime: "classic" }], "typescript"],
+      plugins: ["transform-modules-commonjs"],
+      sourceType: "module",
+    });
+    var exports = {};
+    var args = ["React", "exports", "module", "require", "useState", "useEffect", "useMemo", "useRef", "useCallback", "FluxoChart"].concat(deps);
+    var fn = Function.apply(null, args.concat([out.code]));
+    fn.apply(null, [React, exports, { exports: exports }, function (name) {
+      if (name === "react") return React;
+      throw new Error('Import não suportado: "' + name + '"');
+    }, React.useState, React.useEffect, React.useMemo, React.useRef, React.useCallback,
+    function FluxoChart(props) {
+      return window.__fluxoChartComponent
+        ? React.createElement(window.__fluxoChartComponent, props)
+        : null;
+    }].concat(depValues));
+    var Comp = exports["default"];
+    if (!Comp) {
+      for (var k in exports) if (typeof exports[k] === "function") { Comp = exports[k]; break; }
+    }
+    if (!Comp) throw new Error("Nenhum componente exportado.");
+    return Comp;
+  }
+
   // React blocks
   var sources = document.querySelectorAll('script[data-react-code]');
   Array.prototype.forEach.call(sources, function (tag) {
@@ -276,36 +322,8 @@ const BASE_RUNTIME_JS = String.raw`(function () {
       return;
     }
     try {
-      var src = source.trim().replace(/^\s*import\s[^\n]*\n?/gm, "");
-      var hasModule = /(^|\n)\s*export\s+(default|function|const|class)/.test(src);
-      if (!hasModule) src = "function Componente(props) {\n" + src + "\n}\nexport default Componente;";
-      var out = window.Babel.transform(src, {
-        filename: "component.tsx",
-        presets: [["react", { runtime: "classic" }], "typescript"],
-        plugins: ["transform-modules-commonjs"],
-        sourceType: "module",
-      });
-      var exports = {};
+      var Comp = compileFluxoComponent(source, []);
       var React = window.React;
-      var fn = new Function(
-        "React", "exports", "module", "require", "useState", "useEffect", "useMemo", "useRef", "useCallback", "FluxoChart",
-        out.code
-      );
-      fn(React, exports, { exports: exports }, function (name) {
-        if (name === "react") return React;
-        throw new Error('Import não suportado: "' + name + '"');
-      }, React.useState, React.useEffect, React.useMemo, React.useRef, React.useCallback,
-      function FluxoChart(props) {
-        return window.__fluxoChartComponent
-          ? React.createElement(window.__fluxoChartComponent, props)
-          : null;
-      });
-
-      var Comp = exports["default"];
-      if (!Comp) {
-        for (var k in exports) if (typeof exports[k] === "function") { Comp = exports[k]; break; }
-      }
-      if (!Comp) throw new Error("Nenhum componente exportado.");
       if (window.ReactDOM.createRoot) window.ReactDOM.createRoot(mount).render(React.createElement(Comp));
       else window.ReactDOM.render(React.createElement(Comp), mount);
     } catch (err) {
