@@ -11,6 +11,11 @@ import {
   PieChart,
   Box,
   Code2,
+  Video,
+  Music,
+  Brush,
+  Table as TableIcon,
+  Loader,
 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import type { BlockKind } from "@/lib/types";
@@ -24,11 +29,17 @@ const items: { kind: BlockKind; label: string; icon: React.ComponentType<{ class
   { kind: "input", label: "Input", icon: TextCursorInput, group: "HTML" },
   { kind: "image", label: "Imagem", icon: ImageIcon, group: "HTML" },
   { kind: "link", label: "Link", icon: LinkIcon, group: "HTML" },
+  { kind: "video", label: "Vídeo", icon: Video, group: "HTML" },
+  { kind: "audio", label: "Áudio", icon: Music, group: "HTML" },
+  { kind: "canvas", label: "Canvas", icon: Brush, group: "HTML" },
+  { kind: "table", label: "Tabela", icon: TableIcon, group: "HTML" },
+  { kind: "progress", label: "Progresso", icon: Loader, group: "HTML" },
   { kind: "chart-bar", label: "Barras", icon: BarChart3, group: "Gráficos" },
   { kind: "chart-line", label: "Linha", icon: LineChart, group: "Gráficos" },
   { kind: "chart-pie", label: "Pizza", icon: PieChart, group: "Gráficos" },
   { kind: "react", label: "React", icon: Code2, group: "React" },
 ];
+
 
 export function ComponentPalette() {
   const addBlock = useProject((s) => s.addBlock);

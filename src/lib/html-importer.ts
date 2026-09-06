@@ -44,9 +44,15 @@ const KIND_BY_TAG: Record<string, BlockKind> = {
   TEXTAREA: "input",
   IMG: "image",
   A: "link",
+  VIDEO: "video",
+  AUDIO: "audio",
+  CANVAS: "canvas",
+  TABLE: "table",
+  PROGRESS: "progress",
   SECTION: "section",
   DIV: "div",
 };
+
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -100,7 +106,21 @@ const PROPS_BY_KIND: Record<string, string[]> = {
   input: ["placeholder"],
   image: ["src", "alt"],
   link: ["href"],
+  video: ["src", "controls", "poster"],
+  audio: ["src", "controls"],
+  progress: ["value", "max"],
 };
+
+const TEXTLESS = new Set([
+  "input",
+  "image",
+  "react",
+  "video",
+  "audio",
+  "canvas",
+  "table",
+  "progress",
+]);
 
 function blockFromElement(inner: HTMLElement, layout: { x: number; y: number; w: number; h: number }): Block {
   const reactFile = inner.getAttribute("data-react-file");
@@ -117,7 +137,8 @@ function blockFromElement(inner: HTMLElement, layout: { x: number; y: number; w:
     props,
     style,
     attrs,
-    text: kind === "input" || kind === "image" || kind === "react" ? undefined : text,
+    text: TEXTLESS.has(kind) ? undefined : text,
+
     events: [],
     ...(reactFile ? { sourceFileId: reactFile } : {}),
   };

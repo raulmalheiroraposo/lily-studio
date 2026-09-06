@@ -7,16 +7,16 @@ import { runBinding } from "@/lib/script-runtime";
 export const Route = createFileRoute("/site")({
   head: () => ({
     meta: [
-      { title: "Site publicado — FluxoStudio" },
+      { title: "Site publicado — Lily Studio" },
       {
         name: "description",
         content:
-          "Visualize a página criada no FluxoStudio em uma aba isolada, com scripts e eventos funcionando como no site final.",
+          "Visualize a página criada no Lily Studio em uma aba isolada, com scripts e eventos funcionando como no site final.",
       },
-      { property: "og:title", content: "Site publicado — FluxoStudio" },
+      { property: "og:title", content: "Site publicado — Lily Studio" },
       {
         property: "og:description",
-        content: "Página do FluxoStudio renderizada isoladamente, com eventos e scripts ativos.",
+        content: "Página do Lily Studio renderizada isoladamente, com eventos e scripts ativos.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

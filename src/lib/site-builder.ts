@@ -203,7 +203,7 @@ export function buildPageHtml(
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(page.name.replace(/\.html$/, ""))}</title>
-  <meta name="description" content="Página ${esc(page.name.replace(/\.html$/, ""))} exportada do FluxoStudio, funcional offline." />
+  <meta name="description" content="Página ${esc(page.name.replace(/\.html$/, ""))} exportada do Lily Studio, funcional offline." />
   <style>
     :root { color-scheme: dark; }
     body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0b1220; color:#e6ecf7; }

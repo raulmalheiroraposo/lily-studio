@@ -1,4 +1,4 @@
-# FluxoStudio — plataforma no-code (React + TypeScript)
+# Lily Studio — plataforma no-code (React + TypeScript)
 
 Editor visual com paleta de componentes HTML/CSS/gráficos, painel de propriedades,
 atributos dinâmicos, eventos vinculados a funções de scripts ou URLs, e editor de

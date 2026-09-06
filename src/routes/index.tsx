@@ -22,13 +22,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FluxoStudio — Editor visual no-code React" },
+      { title: "Lily Studio — Editor visual no-code React" },
       {
         name: "description",
         content:
           "Monte páginas HTML e componentes React arrastando blocos, edite propriedades, atributos, eventos e scripts com realce de sintaxe.",
       },
-      { property: "og:title", content: "FluxoStudio — Editor visual no-code React" },
+      { property: "og:title", content: "Lily Studio — Editor visual no-code React" },
       {
         property: "og:description",
         content:
@@ -102,7 +102,7 @@ function EditorPage() {
             <div className="grid h-6 w-6 place-items-center rounded bg-primary text-primary-foreground">
               <WorkflowIcon className="h-3.5 w-3.5" />
             </div>
-            <span className="text-sm font-bold tracking-tight">FluxoStudio</span>
+            <span className="text-sm font-bold tracking-tight">Lily Studio</span>
           </div>
           {activeFile && (
             <div className="max-w-[40vw] truncate rounded border border-border bg-card px-2 py-0.5 text-xs text-muted-foreground">

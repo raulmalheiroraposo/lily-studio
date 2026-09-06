@@ -79,6 +79,32 @@ function defaultBlockFor(kind: BlockKind): Block {
       };
     case "link":
       return { ...base, text: "Link", props: { href: "#" }, w: 120, h: 32 };
+    case "video":
+      return {
+        ...base,
+        props: { src: "https://www.w3schools.com/html/mov_bbb.mp4", controls: "true" },
+        w: 360,
+        h: 220,
+      };
+    case "audio":
+      return {
+        ...base,
+        props: { src: "https://www.w3schools.com/html/horse.mp3", controls: "true" },
+        w: 320,
+        h: 54,
+      };
+    case "canvas":
+      return { ...base, w: 320, h: 200, style: { background: "#0f1626", borderRadius: "6px" } };
+    case "table":
+      return {
+        ...base,
+        w: 400,
+        h: 160,
+        props: { columns: "Coluna A,Coluna B", rows: 2 },
+      };
+    case "progress":
+      return { ...base, props: { value: 60, max: 100 }, w: 260, h: 20 };
+
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
@@ -142,7 +168,7 @@ function starterFiles(): ProjectFile[] {
       name: "acoes.js",
       type: "script",
       code:
-        "// Funções disponíveis para os eventos dos componentes.\nfunction saudacao() {\n  alert('Olá do FluxoStudio!');\n}\n\nfunction logarAgora() {\n  console.log('Clique em', new Date().toLocaleTimeString('pt-BR'));\n}\n",
+        "// Funções disponíveis para os eventos dos componentes.\nfunction saudacao() {\n  alert('Olá do Lily Studio!');\n}\n\nfunction logarAgora() {\n  console.log('Clique em', new Date().toLocaleTimeString('pt-BR'));\n}\n",
     },
     {
       id: "seed-component",
@@ -156,7 +182,7 @@ function starterFiles(): ProjectFile[] {
       name: "pagina-1.html",
       type: "page",
       blocks: [
-        block({ id: "seed-b1", kind: "heading", x: 40, y: 32, w: 520, text: "Bem-vindo ao FluxoStudio" }),
+        block({ id: "seed-b1", kind: "heading", x: 40, y: 32, w: 520, text: "Bem-vindo ao Lily Studio" }),
         block({
           id: "seed-b2",
           kind: "paragraph",

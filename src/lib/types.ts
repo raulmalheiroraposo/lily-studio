@@ -23,10 +23,16 @@ export type BlockKind =
   | "input"
   | "image"
   | "link"
+  | "video"
+  | "audio"
+  | "canvas"
+  | "table"
+  | "progress"
   | "chart-bar"
   | "chart-line"
   | "chart-pie"
   | "react";
+
 
 export type Block = {
   id: string;
