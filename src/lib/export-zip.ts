@@ -62,7 +62,7 @@ export async function exportProjectZip(project: ProjectState) {
       "index.html",
       `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8" /><meta http-equiv="refresh" content="0; url=${pageFileName(
         firstPage
-      )}" /><title>Site FluxoStudio</title></head><body><a href="${pageFileName(firstPage)}">Abrir site</a></body></html>`
+      )}" /><title>Site Lily Studio</title></head><body><a href="${pageFileName(firstPage)}">Abrir site</a></body></html>`
     );
   }
   site.file("runtime.js", SITE_RUNTIME_JS);
@@ -87,7 +87,7 @@ export async function exportProjectZip(project: ProjectState) {
   zip.file("projeto-nocode.json", JSON.stringify(project, null, 2));
   zip.file(
     "LEIA-ME.md",
-    `# Projeto exportado do FluxoStudio
+    `# Projeto exportado do Lily Studio
 
 - \`site/\` — **site completo e funcional offline**. Abra \`site/index.html\` (ou a página desejada) direto no navegador: blocos, gráficos, componentes React, scripts, eventos e painel de logs funcionam como no Preview.
 - \`site/vendor/\` — React, ReactDOM e o compilador Babel ${
@@ -96,7 +96,7 @@ export async function exportProjectZip(project: ProjectState) {
 - \`site/scripts/\` — scripts do projeto usados pelos eventos
 - \`components/\` — componentes React (.tsx)
 - \`scripts/\` — código-fonte dos scripts
-- \`projeto-nocode.json\` — projeto completo (reimporte no FluxoStudio)
+- \`projeto-nocode.json\` — projeto completo (reimporte no Lily Studio)
 
 Gerado em ${new Date().toLocaleString("pt-BR")}.
 `

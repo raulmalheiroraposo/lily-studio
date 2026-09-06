@@ -4,9 +4,9 @@ import { ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/manual")({
   head: () => ({
     meta: [
-      { title: "Manual — FluxoStudio" },
-      { name: "description", content: "Guia completo de uso da plataforma no-code FluxoStudio: canvas, componentes, scripts, propriedades, atributos, eventos e editor de código." },
-      { property: "og:title", content: "Manual — FluxoStudio" },
+      { title: "Manual — Lily Studio" },
+      { name: "description", content: "Guia completo de uso da plataforma no-code Lily Studio: canvas, componentes, scripts, propriedades, atributos, eventos e editor de código." },
+      { property: "og:title", content: "Manual — Lily Studio" },
       { property: "og:description", content: "Como usar o editor visual, criar scripts e editar código." },
     ],
   }),
@@ -21,7 +21,7 @@ function Manual() {
           <Link to="/" className="flex items-center gap-1.5 rounded border border-border px-3 py-1 text-xs hover:bg-accent">
             <ArrowLeft className="h-3 w-3" /> Voltar ao editor
           </Link>
-          <h1 className="text-lg font-bold">Manual do FluxoStudio</h1>
+          <h1 className="text-lg font-bold">Manual do Lily Studio</h1>
         </div>
       </header>
 
@@ -37,7 +37,7 @@ function Manual() {
         `}</style>
 
         <p className="text-lg text-muted-foreground">
-          O <b className="text-foreground">FluxoStudio</b> é uma plataforma no-code para construir páginas HTML, componentes React e scripts — arraste, edite, vincule eventos e execute.
+          O <b className="text-foreground">Lily Studio</b> é uma plataforma no-code para construir páginas HTML, componentes React e scripts — arraste, edite, vincule eventos e execute.
         </p>
 
         <h2>1. Interface</h2>
@@ -156,7 +156,7 @@ function Manual() {
         <ol>
           <li>Na barra do Lovable, abra o menu <kbd>+</kbd> → <b>GitHub</b> → <b>Connect project</b>.</li>
           <li>Autorize o GitHub App e escolha a conta/organização.</li>
-          <li>Clique em <b>Create Repository</b> — o código do FluxoStudio é enviado ao seu GitHub.</li>
+          <li>Clique em <b>Create Repository</b> — o código do Lily Studio é enviado ao seu GitHub.</li>
           <li>A partir daí, cada alteração feita aqui é enviada automaticamente para o repositório.</li>
         </ol>
         <p>Já os <i>projetos</i> criados dentro do editor (páginas, componentes, scripts) são persistidos como JSON. Faça <i>Salvar/Exportar</i> e adicione o arquivo <code>projeto-nocode.json</code> ao repositório se quiser versioná-los junto.</p>

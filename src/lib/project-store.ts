@@ -142,7 +142,7 @@ function starterFiles(): ProjectFile[] {
       name: "acoes.js",
       type: "script",
       code:
-        "// Funções disponíveis para os eventos dos componentes.\nfunction saudacao() {\n  alert('Olá do FluxoStudio!');\n}\n\nfunction logarAgora() {\n  console.log('Clique em', new Date().toLocaleTimeString('pt-BR'));\n}\n",
+        "// Funções disponíveis para os eventos dos componentes.\nfunction saudacao() {\n  alert('Olá do Lily Studio!');\n}\n\nfunction logarAgora() {\n  console.log('Clique em', new Date().toLocaleTimeString('pt-BR'));\n}\n",
     },
     {
       id: "seed-component",
@@ -156,7 +156,7 @@ function starterFiles(): ProjectFile[] {
       name: "pagina-1.html",
       type: "page",
       blocks: [
-        block({ id: "seed-b1", kind: "heading", x: 40, y: 32, w: 520, text: "Bem-vindo ao FluxoStudio" }),
+        block({ id: "seed-b1", kind: "heading", x: 40, y: 32, w: 520, text: "Bem-vindo ao Lily Studio" }),
         block({
           id: "seed-b2",
           kind: "paragraph",
