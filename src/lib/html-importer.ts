@@ -44,9 +44,15 @@ const KIND_BY_TAG: Record<string, BlockKind> = {
   TEXTAREA: "input",
   IMG: "image",
   A: "link",
+  VIDEO: "video",
+  AUDIO: "audio",
+  CANVAS: "canvas",
+  TABLE: "table",
+  PROGRESS: "progress",
   SECTION: "section",
   DIV: "div",
 };
+
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 

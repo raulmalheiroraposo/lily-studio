@@ -79,6 +79,32 @@ function defaultBlockFor(kind: BlockKind): Block {
       };
     case "link":
       return { ...base, text: "Link", props: { href: "#" }, w: 120, h: 32 };
+    case "video":
+      return {
+        ...base,
+        props: { src: "https://www.w3schools.com/html/mov_bbb.mp4", controls: "true" },
+        w: 360,
+        h: 220,
+      };
+    case "audio":
+      return {
+        ...base,
+        props: { src: "https://www.w3schools.com/html/horse.mp3", controls: "true" },
+        w: 320,
+        h: 54,
+      };
+    case "canvas":
+      return { ...base, w: 320, h: 200, style: { background: "#0f1626", borderRadius: "6px" } };
+    case "table":
+      return {
+        ...base,
+        w: 400,
+        h: 160,
+        props: { columns: "Coluna A,Coluna B", rows: 2 },
+      };
+    case "progress":
+      return { ...base, props: { value: 60, max: 100 }, w: 260, h: 20 };
+
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
