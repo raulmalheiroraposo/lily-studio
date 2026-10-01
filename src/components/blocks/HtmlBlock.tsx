@@ -1,6 +1,8 @@
 import type { Block } from "@/lib/types";
+import { tableConfig } from "@/lib/table-block";
 import { ChartBlock } from "./ChartBlock";
 import { ReactBlock } from "./ReactBlock";
+
 
 export function BlockRenderer({
   block,
@@ -90,6 +92,79 @@ export function BlockRenderer({
           {block.text}
         </a>
       );
+    case "video":
+      return (
+        <video
+          src={block.props.src as string}
+          poster={block.props.poster as string | undefined}
+          controls={String(block.props.controls ?? "true") !== "false"}
+          style={{ width: "100%", height: "100%", borderRadius: 6, background: "#000", ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        />
+      );
+    case "audio":
+      return (
+        <audio
+          src={block.props.src as string}
+          controls={String(block.props.controls ?? "true") !== "false"}
+          style={{ width: "100%", ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        />
+      );
+    case "canvas":
+      return (
+        <canvas
+          width={block.w}
+          height={block.h}
+          style={{ width: "100%", height: "100%", borderRadius: 6, ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        />
+      );
+    case "table": {
+      const { columns, rows } = tableConfig(block);
+      return (
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        >
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c} style={{ border: "1px solid var(--border)", padding: "4px 8px", textAlign: "left" }}>
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rows }).map((_, r) => (
+              <tr key={r}>
+                {columns.map((c) => (
+                  <td key={c} style={{ border: "1px solid var(--border)", padding: "4px 8px" }}>
+                    —
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+    case "progress":
+      return (
+        <progress
+          value={Number(block.props.value ?? 60)}
+          max={Number(block.props.max ?? 100)}
+          style={{ width: "100%", ...(block.style as React.CSSProperties) }}
+          {...attrs}
+          {...handlers}
+        />
+      );
+
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
