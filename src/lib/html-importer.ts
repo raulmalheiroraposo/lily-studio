@@ -234,10 +234,15 @@ export function parsePageHtml(
       h: px(cs.height) ?? 60,
     };
     if (!positioned) nextY = layout.y + layout.h + 16;
-    const children = Array.from(inner.children).filter(
-      (c) => !isIgnored(c) && !(c as HTMLElement).hasAttribute("data-block-id")
-    ) as HTMLElement[];
+    // Self-contained elements (table rows, media sources) keep their markup.
+    const selfContained = /^(TABLE|VIDEO|AUDIO|CANVAS|PROGRESS|SELECT)$/.test(inner.tagName);
+    const children = selfContained
+      ? []
+      : (Array.from(inner.children).filter(
+          (c) => !isIgnored(c) && !(c as HTMLElement).hasAttribute("data-block-id")
+        ) as HTMLElement[]);
     const block = blockFromElement(inner, layout);
+
     // Containers with nested markup: flatten children into their own blocks.
     if (children.length > 0) block.text = undefined;
     added.push(block);

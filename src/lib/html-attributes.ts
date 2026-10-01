@@ -122,7 +122,43 @@ const SPECIFIC: Partial<Record<BlockKind, AttrSpec[]>> = {
     },
   ],
   heading: [{ name: "ariaLevel", kind: "number" }],
+  video: [
+    { name: "src", kind: "url", required: true },
+    { name: "poster", kind: "url" },
+    { name: "preload", options: ["", "none", "metadata", "auto"] },
+    { name: "width", kind: "number" },
+    { name: "height", kind: "number" },
+    { name: "crossOrigin", options: ["", "anonymous", "use-credentials"] },
+    bool("controls"),
+    bool("autoPlay"),
+    bool("loop"),
+    bool("muted"),
+    bool("playsInline"),
+  ],
+  audio: [
+    { name: "src", kind: "url", required: true },
+    { name: "preload", options: ["", "none", "metadata", "auto"] },
+    { name: "crossOrigin", options: ["", "anonymous", "use-credentials"] },
+    bool("controls"),
+    bool("autoPlay"),
+    bool("loop"),
+    bool("muted"),
+  ],
+  canvas: [
+    { name: "width", kind: "number" },
+    { name: "height", kind: "number" },
+  ],
+  table: [
+    { name: "summary" },
+    { name: "cellPadding", kind: "number" },
+    { name: "cellSpacing", kind: "number" },
+  ],
+  progress: [
+    { name: "value", kind: "number" },
+    { name: "max", kind: "number", default: "100" },
+  ],
 };
+
 
 /** All attributes offered for a block kind (specific first, then globals). */
 export function attrsForKind(kind: BlockKind): AttrSpec[] {

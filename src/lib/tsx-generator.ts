@@ -4,6 +4,8 @@
  */
 import type { Block } from "./types";
 import { chartSourceOf } from "./chart-data";
+import { tableConfig } from "./table-block";
+
 
 const styleLiteral = (style: Record<string, unknown>) => JSON.stringify(style ?? {});
 
@@ -61,6 +63,31 @@ function inner(block: Block, tags: Record<string, string> = {}): string {
       return `<a style={${styleLiteral(block.style ?? {})}}${attrsLiteral(
         mergeAttrs({ href: block.props.href ?? "#" }, own)
       )}>${text}</a>`;
+    case "video":
+      return `<video style={${styleLiteral(st)}}${attrsLiteral(
+        mergeAttrs({ src: block.props.src, poster: block.props.poster, controls: "{true}" }, own)
+      )} />`;
+    case "audio":
+      return `<audio style={${styleLiteral({ ...st, height: undefined } as Record<string, unknown>)}}${attrsLiteral(
+        mergeAttrs({ src: block.props.src, controls: "{true}" }, own)
+      )} />`;
+    case "canvas":
+      return `<canvas style={${styleLiteral(st)}}${attrsLiteral(
+        mergeAttrs({ width: `{${block.w}}`, height: `{${block.h}}` }, own)
+      )} />`;
+    case "table": {
+      const { columns, rows } = tableConfig(block);
+      const head = columns.map((c) => `<th>${c}</th>`).join("");
+      const body = Array.from({ length: rows })
+        .map(() => `<tr>${columns.map(() => "<td>—</td>").join("")}</tr>`)
+        .join("");
+      return `<table style={${styleLiteral({ borderCollapse: "collapse", ...st })}}${a}><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+    case "progress":
+      return `<progress style={${styleLiteral({ width: "100%" })}}${attrsLiteral(
+        mergeAttrs({ value: `{${Number(block.props.value ?? 60)}}`, max: `{${Number(block.props.max ?? 100)}}` }, own)
+      )} />`;
+
     case "chart-bar":
     case "chart-line":
     case "chart-pie": {
