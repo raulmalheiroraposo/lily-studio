@@ -58,10 +58,13 @@ export type ProjectFile = {
   // For page/component: blocks. For script: source code.
   blocks?: Block[];
   code?: string;
+  /** Pasta virtual (ex.: "src/paginas"). Vazio = raiz. */
+  folder?: string;
 };
 
 export type ProjectState = {
   files: ProjectFile[];
   activeFileId: string | null;
   selectedBlockId: string | null;
+  folders?: string[];
 };

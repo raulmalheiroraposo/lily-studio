@@ -134,7 +134,10 @@ type Actions = {
   undo: () => void;
   redo: () => void;
   restoreHistory: (index: number) => void;
-  createFile: (type: ProjectFile["type"], name?: string) => string;
+  createFile: (type: ProjectFile["type"], name?: string, folder?: string) => string;
+  moveFile: (id: string, folder: string) => void;
+  addFolder: (path: string) => void;
+  removeFolder: (path: string) => void;
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
   setActiveFile: (id: string | null) => void;
@@ -289,7 +292,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
           };
         }),
 
-      createFile: (type, name) => {
+      createFile: (type, name, folder) => {
         const id = uid();
         const defaultName =
           name ??
@@ -313,9 +316,23 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                 defaultComponentCode
               )
             : { id, name: defaultName, type, blocks: [] };
+        if (folder) file.folder = folder;
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
       },
+      moveFile: (id, folder) =>
+        track(`Moveu para ${folder || "raiz"}`, (s) => ({
+          files: s.files.map((f) => (f.id === id ? { ...f, folder: folder || undefined } : f)),
+        })),
+      addFolder: (path) =>
+        set((s) => ({ folders: Array.from(new Set([...(s.folders ?? []), path])) })),
+      removeFolder: (path) =>
+        track(`Excluiu pasta ${path}`, (s) => ({
+          folders: (s.folders ?? []).filter((p) => p !== path && !p.startsWith(path + "/")),
+          files: s.files.map((f) =>
+            f.folder && (f.folder === path || f.folder.startsWith(path + "/")) ? { ...f, folder: undefined } : f
+          ),
+        })),
       deleteFile: (id) =>
         track("Excluiu arquivo", (s) => ({
           files: s.files.filter((f) => f.id !== id),
@@ -419,8 +436,8 @@ export const useProject = create<ProjectState & Extra & Actions>()(
           lastSavedAt: Date.now(),
         })),
       exportProject: () => {
-        const { files, activeFileId, selectedBlockId } = get();
-        return { files, activeFileId, selectedBlockId };
+        const { files, activeFileId, selectedBlockId, folders } = get();
+        return { files, activeFileId, selectedBlockId, folders };
       },
       resetProject: () => set({ ...initial, ...initialExtra }),
       };
@@ -429,6 +446,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
       name: "nocode-project-v2",
       partialize: (s) => ({
         files: s.files,
+        folders: s.folders,
         activeFileId: s.activeFileId,
         selectedBlockId: s.selectedBlockId,
         past: s.past.slice(-20),
