@@ -1,6 +1,8 @@
 import type { Block, ProjectFile } from "./types";
 import { DEFAULT_CHART_DATA, type ChartPoint } from "./chart-data";
 import { componentSources } from "./component-refs";
+import { tableConfig } from "./table-block";
+
 
 const CHART_COLORS = ["#5da8ff", "#b48cff", "#66d9c2", "#ffb861", "#ff7d9c"];
 
@@ -132,6 +134,36 @@ function innerBlockHtml(block: Block, code: string) {
       return `<a style="color:#5da8ff;${s}"${attrsToHtml(block.attrs, {
         href: block.props.href ?? "#",
       })}>${text}</a>`;
+    case "video":
+      return `<video style="width:100%;height:100%;border-radius:6px;background:#000;${s}"${attrsToHtml(block.attrs, {
+        src: block.props.src,
+        poster: block.props.poster,
+        controls: String(block.props.controls ?? "true") !== "false" ? "controls" : "",
+      })}></video>`;
+    case "audio":
+      return `<audio style="width:100%;${s}"${attrsToHtml(block.attrs, {
+        src: block.props.src,
+        controls: String(block.props.controls ?? "true") !== "false" ? "controls" : "",
+      })}></audio>`;
+    case "canvas":
+      return `<canvas width="${block.w}" height="${block.h}" style="width:100%;height:100%;border-radius:6px;${s}"${a}></canvas>`;
+    case "table": {
+      const { columns, rows } = tableConfig(block);
+      const head = columns.map((c) => `<th style="border:1px solid #2a3346;padding:4px 8px;text-align:left">${esc(c)}</th>`).join("");
+      const body = Array.from({ length: rows })
+        .map(
+          () =>
+            `<tr>${columns.map(() => `<td style="border:1px solid #2a3346;padding:4px 8px">—</td>`).join("")}</tr>`
+        )
+        .join("");
+      return `<table style="width:100%;border-collapse:collapse;font-size:13px;${s}"${a}><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+    case "progress":
+      return `<progress style="width:100%;${s}"${attrsToHtml(block.attrs, {
+        value: block.props.value ?? 60,
+        max: block.props.max ?? 100,
+      })}></progress>`;
+
     case "chart-bar":
     case "chart-line":
     case "chart-pie":
