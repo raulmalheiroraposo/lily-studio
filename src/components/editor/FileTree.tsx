@@ -29,7 +29,8 @@ function buildTree(files: ProjectFile[], folders: string[]): Node {
 
 export function FileTree() {
   const files = useProject((s) => s.files);
-  const folders = useProject((s) => s.folders ?? []);
+  const storedFolders = useProject((s) => s.folders);
+  const folders = useMemo(() => storedFolders ?? [], [storedFolders]);
   const activeFileId = useProject((s) => s.activeFileId);
   const setActiveFile = useProject((s) => s.setActiveFile);
   const createFile = useProject((s) => s.createFile);

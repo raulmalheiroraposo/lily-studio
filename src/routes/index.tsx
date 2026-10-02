@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink, Code2 } from "lucide-react";
+import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink, Code2, FileIcon, FolderOpen, Save, SaveAll, Server, Smartphone, ChevronDown } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
 import { Canvas } from "@/components/editor/Canvas";
@@ -9,6 +9,14 @@ import { HistoryPanel } from "@/components/editor/HistoryPanel";
 import { LogPanel } from "@/components/editor/LogPanel";
 import { CodeEditorModal } from "@/components/editor/CodeEditorModal";
 import { exportProjectZip } from "@/lib/export-zip";
+import { openFiles, openFolder, saveAll, saveAs } from "@/lib/local-fs";
+import { startLocalServer, buildMobileApp } from "@/lib/deploy";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+  DropdownMenuShortcut, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { buildPageHtml } from "@/lib/site-builder";
 import { parsePageHtml } from "@/lib/html-importer";
 import { useProject } from "@/lib/project-store";
@@ -82,6 +90,26 @@ function EditorPage() {
     input.click();
   };
   const doExportZip = () => void exportProjectZip(exportProject());
+  const run = async (fn: () => Promise<string | number | void>, ok?: (r: never) => string) => {
+    try {
+      const r = await fn();
+      const msg = ok ? ok(r as never) : typeof r === "string" ? r : "";
+      if (msg) toast(msg);
+    } catch (e) {
+      toast.error(`Erro: ${(e as Error).message}`);
+    }
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "s") { e.preventDefault(); void run(e.shiftKey ? saveAs : saveAll); }
+      else if (k === "o") { e.preventDefault(); void run(openFiles, (n: number) => (n ? `${n} arquivo(s) aberto(s).` : "")); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pages = files.filter((f) => f.type === "page");
   const activePage = activeFile?.type === "page" ? activeFile : null;
@@ -141,23 +169,52 @@ function EditorPage() {
             {preview ? <Pencil className="h-3 w-3" /> : <Play className="h-3 w-3" />}
             {preview ? "Editar" : "Preview"}
           </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent">
+              <FileIcon className="h-3 w-3" /> Arquivo <ChevronDown className="h-3 w-3" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={() => void run(openFiles, (n: number) => (n ? `${n} arquivo(s) aberto(s).` : ""))}>
+                <Upload className="h-3.5 w-3.5" /> Abrir... <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void run(openFolder, (n: number) => (n ? `${n} arquivo(s) carregado(s) da pasta.` : ""))}>
+                <FolderOpen className="h-3.5 w-3.5" /> Abrir Pasta...
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => void run(saveAll)}>
+                <SaveAll className="h-3.5 w-3.5" /> Salvar <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void run(saveAs)}>
+                <Save className="h-3.5 w-3.5" /> Salvar Como... <DropdownMenuShortcut>Ctrl+Shift+S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={doImport}>
+                <Upload className="h-3.5 w-3.5" /> Importar Projeto
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={doExport}>
+                <Download className="h-3.5 w-3.5" /> Exportar Projeto
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={doExportZip}>
+                <FileArchive className="h-3.5 w-3.5" /> Baixar ZIP
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
-            onClick={doImport}
+            onClick={() => void run(() => startLocalServer(exportProject()))}
+            title="Iniciar o site gerado em um servidor local"
             className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
           >
-            <Upload className="h-3 w-3" /> Importar
+            <Server className="h-3 w-3" /> Servidor local
           </button>
           <button
-            onClick={doExport}
+            onClick={() => {
+              const name = prompt("Nome do aplicativo:", "Meu App Lily");
+              if (name) void run(() => buildMobileApp(exportProject(), name), () => "Projeto do app móvel baixado. Veja o LEIA-ME.md dentro do ZIP.");
+            }}
+            title="Transformar o site em aplicativo para celular"
             className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
           >
-            <Download className="h-3 w-3" /> Salvar/Exportar
-          </button>
-          <button
-            onClick={doExportZip}
-            className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
-          >
-            <FileArchive className="h-3 w-3" /> Baixar ZIP
+            <Smartphone className="h-3 w-3" /> App móvel
           </button>
           {activePage && (
             <button
@@ -254,6 +311,7 @@ function EditorPage() {
         </ResizablePanel>
       </ResizablePanelGroup>
 
+      <Toaster />
       <CodeEditorModal
         open={htmlOpen}
         title={`Código HTML — ${activePage?.name ?? ""}`}
