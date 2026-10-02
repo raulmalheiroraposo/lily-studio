@@ -11,5 +11,7 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // LILY_DESKTOP=1 gera o editor como SPA estático (dist/client/_shell.html) para o app desktop.
+    ...(process.env.LILY_DESKTOP ? { spa: { enabled: true } } : {}),
   },
 });

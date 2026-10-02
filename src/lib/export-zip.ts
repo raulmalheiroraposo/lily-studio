@@ -8,7 +8,7 @@ const VENDORS: { file: string; url: string }[] = [
   { file: "babel.js", url: "https://unpkg.com/@babel/standalone@7.28.4/babel.min.js" },
 ];
 
-async function fetchVendors() {
+export async function fetchVendors() {
   try {
     const files = await Promise.all(
       VENDORS.map(async (v) => {
@@ -45,12 +45,10 @@ ${blocks}
 `;
 }
 
-export async function exportProjectZip(project: ProjectState) {
-  const zip = new JSZip();
+/** Escreve o site completo (offline) dentro de uma pasta do ZIP. */
+export function writeSite(site: JSZip, project: ProjectState, vendors: { file: string; code: string }[] | null) {
   const scripts = project.files.filter((f) => f.type === "script");
   const pages = project.files.filter((f) => f.type === "page");
-  const vendors = await fetchVendors();
-  const site = zip.folder("site")!;
 
   // --- Site completo, funcional offline ---
   for (const page of pages) {
@@ -68,6 +66,21 @@ export async function exportProjectZip(project: ProjectState) {
   site.file("runtime.js", SITE_RUNTIME_JS);
   for (const s of scripts) site.file(`scripts/${scriptFileName(s)}`, s.code ?? "");
   if (vendors) for (const v of vendors) site.file(`vendor/${v.file}`, v.code);
+}
+
+export function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function exportProjectZip(project: ProjectState) {
+  const zip = new JSZip();
+  const vendors = await fetchVendors();
+  writeSite(zip.folder("site")!, project, vendors);
 
   // --- Fontes do projeto ---
   for (const file of project.files) {
@@ -103,10 +116,5 @@ Gerado em ${new Date().toLocaleString("pt-BR")}.
   );
 
   const blob = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "projeto-fluxostudio.zip";
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, "projeto-lily-studio.zip");
 }
