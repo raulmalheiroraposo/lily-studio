@@ -54,12 +54,13 @@ export type Block = {
 export type ProjectFile = {
   id: string;
   name: string;
-  type: "page" | "component" | "script";
+  type: "page" | "component" | "script" | "style";
   // For page/component: blocks. For script: source code.
   blocks?: Block[];
   code?: string;
   /** Pasta virtual (ex.: "src/paginas"). Vazio = raiz. */
   folder?: string;
+  cssFileIds?: string[];
 };
 
 export type ProjectState = {

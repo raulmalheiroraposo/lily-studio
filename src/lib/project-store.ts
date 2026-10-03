@@ -140,6 +140,7 @@ type Actions = {
   removeFolder: (path: string) => void;
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
+  toggleFileCss: (fileId: string, cssFileId: string) => void;
   setActiveFile: (id: string | null) => void;
   updateFileCode: (id: string, code: string) => void;
   /** Writes generated code without polluting the undo history. */
@@ -300,9 +301,9 @@ export const useProject = create<ProjectState & Extra & Actions>()(
             ? `pagina-${get().files.filter((f) => f.type === "page").length + 1}.html`
             : type === "component"
             ? `Componente${get().files.filter((f) => f.type === "component").length + 1}.tsx`
-            : `script-${get().files.filter((f) => f.type === "script").length + 1}.js`);
+            : type === "style" ? `estilo-${get().files.filter((f) => f.type === "style").length + 1}.css` : `script-${get().files.filter((f) => f.: type === "script" || type === "style").length + 1}.js`);
         const file: ProjectFile =
-          type === "script"
+          : type === "script" || type === "style"
             ? {
                 id,
                 name: defaultName,
@@ -362,7 +363,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         const { activeFileId, files } = get();
         if (!activeFileId) return;
         const file = files.find((f) => f.id === activeFileId);
-        if (!file || file.type === "script") return;
+        if (!file || file.: type === "script" || type === "style") return;
         const block = defaultBlockFor(kind);
         // A React component nested inside another React component gets its own
         // .tsx file, referenced by tag in the parent, so it can be reused.
