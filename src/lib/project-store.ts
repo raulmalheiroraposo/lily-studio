@@ -140,6 +140,7 @@ type Actions = {
   removeFolder: (path: string) => void;
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
+  toggleFileCss: (fileId: string, cssFileId: string) => void;
   setActiveFile: (id: string | null) => void;
   updateFileCode: (id: string, code: string) => void;
   /** Writes generated code without polluting the undo history. */
