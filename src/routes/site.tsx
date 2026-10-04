@@ -79,7 +79,7 @@ function SitePage() {
   }
 
   return (
-    <main className="relative min-h-screen w-full bg-background">
+    <main className="page relative min-h-screen w-full bg-background">
       {pageStyles.map((file) => <style key={file.id}>{file.code ?? ""}</style>)}
       {page.blocks?.map((block) => (
         <div

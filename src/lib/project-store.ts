@@ -339,7 +339,11 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         })),
       deleteFile: (id) =>
         track("Excluiu arquivo", (s) => ({
-          files: s.files.filter((f) => f.id !== id),
+          files: s.files
+            .filter((f) => f.id !== id)
+            .map((f) => f.cssFileIds?.includes(id)
+              ? { ...f, cssFileIds: f.cssFileIds.filter((cssId) => cssId !== id) }
+              : f),
           activeFileId: s.activeFileId === id ? null : s.activeFileId,
         })),
       renameFile: (id, name) =>

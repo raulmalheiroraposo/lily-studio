@@ -185,7 +185,7 @@ export function Canvas({ preview }: { preview: boolean }) {
     >
       <div
         ref={surfaceRef}
-        className="relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
+        className="page relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
       >
         {(activeFile.cssFileIds ?? []).map((id) => {
           const cssFile = files.find((file) => file.id === id && file.type === "style");
