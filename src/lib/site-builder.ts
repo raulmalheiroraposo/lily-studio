@@ -186,7 +186,7 @@ function innerBlockHtml(block: Block, code: string) {
 export function buildPageHtml(
   page: ProjectFile,
   files: ProjectFile[],
-  opts: { pages: ProjectFile[]; vendorLocal: boolean }
+  opts: { pages: ProjectFile[]; vendorLocal: boolean; styleHref?: (style: ProjectFile) => string }
 ) {
   const scripts = files.filter((f) => f.type === "script");
   const styles = (page.cssFileIds ?? [])
@@ -239,7 +239,7 @@ export function buildPageHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(page.name.replace(/\.html$/, ""))}</title>
   <meta name="description" content="Página ${esc(page.name.replace(/\.html$/, ""))} exportada do Lily Studio, funcional offline." />
-${styles.map((style) => `  <link rel="stylesheet" href="styles/${cssFileName(style)}" />`).join("\n")}
+${styles.map((style) => `  <link rel="stylesheet" href="${esc(opts.styleHref?.(style) ?? `styles/${cssFileName(style)}`)}" />`).join("\n")}
   <style>
     :root { color-scheme: dark; }
     body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0b1220; color:#e6ecf7; }

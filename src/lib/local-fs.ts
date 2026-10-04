@@ -112,8 +112,22 @@ export async function openFolder(): Promise<number> {
   return load(await pickWithInput({ dir: true }), true);
 }
 
+function relativePath(fromFolder: string, toPath: string) {
+  const from = normalizeFolder(fromFolder).split("/").filter(Boolean);
+  const to = normalizeFolder(toPath).split("/").filter(Boolean);
+  while (from.length && to.length && from[0] === to[0]) {
+    from.shift();
+    to.shift();
+  }
+  return [...from.map(() => ".."), ...to].join("/") || ".";
+}
+
 export function fileSource(f: ProjectFile, files: ProjectFile[]) {
-  if (f.type === "page") return buildPageHtml(f, files, { pages: files.filter((x) => x.type === "page"), vendorLocal: false });
+  if (f.type === "page") return buildPageHtml(f, files, {
+    pages: files.filter((x) => x.type === "page"),
+    vendorLocal: false,
+    styleHref: (style) => relativePath(folderOf(f), `${folderOf(style)}/${style.name}`),
+  });
   return f.code ?? "";
 }
 
