@@ -82,7 +82,7 @@ function load(entries: Entry[], stripRoot: boolean): number {
 }
 
 export async function openFiles(): Promise<number> {
-  const accept = ".html,.htm,.tsx,.jsx,.js,.ts,.json";
+  const accept = ".html,.htm,.tsx,.jsx,.js,.ts,.css,.json";
   if ("showOpenFilePicker" in window) {
     try {
       const hs: AnyHandle[] = await w().showOpenFilePicker({ multiple: true });

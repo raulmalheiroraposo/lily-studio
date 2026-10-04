@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { html } from "@codemirror/lang-html";
-import { css } from "@codemirror/lang-css";
-import { json } from "@codemirror/lang-json";
 import { X, Save } from "lucide-react";
-
-type Lang = "javascript" | "typescript" | "html" | "css" | "json";
+import {
+  EDITOR_LANGUAGES,
+  EDITOR_THEMES,
+  MonacoCodeEditor,
+  type EditorLanguage,
+  type EditorTheme,
+} from "./MonacoCodeEditor";
 
 export function CodeEditorModal({
   open,
@@ -19,29 +19,40 @@ export function CodeEditorModal({
   open: boolean;
   title: string;
   value: string;
-  lang?: Lang;
+  lang?: EditorLanguage;
   onClose: () => void;
   onSave: (v: string) => void;
 }) {
   const [code, setCode] = useState(value);
+  const [language, setLanguage] = useState<EditorLanguage>(lang);
+  const [theme, setTheme] = useState<EditorTheme>("vs-dark");
   useEffect(() => setCode(value), [value, open]);
+  useEffect(() => setLanguage(lang), [lang, open]);
 
   if (!open) return null;
-  const ext =
-    lang === "html"
-      ? [html()]
-      : lang === "css"
-      ? [css()]
-      : lang === "json"
-      ? [json()]
-      : [javascript({ jsx: true, typescript: lang === "typescript" })];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-3 sm:p-6">
       <div className="flex h-[80vh] w-[min(1000px,95vw)] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2">
-          <div className="text-sm font-semibold">{title}</div>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2">
+          <div className="min-w-0 truncate text-sm font-semibold">{title}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Linguagem do editor"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as EditorLanguage)}
+              className="rounded border border-border bg-input px-2 py-1 text-xs"
+            >
+              {EDITOR_LANGUAGES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select
+              aria-label="Tema do editor"
+              value={theme}
+              onChange={(event) => setTheme(event.target.value as EditorTheme)}
+              className="rounded border border-border bg-input px-2 py-1 text-xs"
+            >
+              {EDITOR_THEMES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
             <button
               onClick={() => {
                 onSave(code);
@@ -59,16 +70,8 @@ export function CodeEditorModal({
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-auto">
-          <CodeMirror
-            value={code}
-            height="100%"
-            theme="dark"
-            extensions={ext}
-            onChange={setCode}
-            basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: true }}
-            style={{ height: "100%", fontSize: 13 }}
-          />
+        <div className="min-h-0 flex-1">
+          <MonacoCodeEditor value={code} language={language} theme={theme} onChange={setCode} />
         </div>
       </div>
     </div>

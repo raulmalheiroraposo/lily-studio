@@ -55,11 +55,12 @@ export type ProjectFile = {
   id: string;
   name: string;
   type: "page" | "component" | "script" | "style";
-  // For page/component: blocks. For script: source code.
+  // For page/component: blocks. For script/style: source code.
   blocks?: Block[];
   code?: string;
   /** Pasta virtual (ex.: "src/paginas"). Vazio = raiz. */
   folder?: string;
+  /** Stylesheets applied to this page or component. */
   cssFileIds?: string[];
 };
 
