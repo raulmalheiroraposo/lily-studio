@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import {
-  FileCode, FileText, ScrollText, Plus, Trash2, Pencil, Check, Folder, FolderOpen,
+  FileCode, FileText, ScrollText, Palette, Plus, Trash2, Pencil, Check, Folder, FolderOpen,
   FolderPlus, ChevronRight, ChevronDown, FolderInput,
 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import type { ProjectFile } from "@/lib/types";
 import { folderOf, normalizeFolder } from "@/lib/folders";
 
-const icons = { page: FileText, component: FileCode, script: ScrollText };
+const icons = { page: FileText, component: FileCode, script: ScrollText, style: Palette };
 
 type Node = { name: string; path: string; children: Map<string, Node>; files: ProjectFile[] };
 
@@ -57,8 +57,8 @@ export function FileTree() {
     if (path) addFolder(path);
   };
   const newFile = (parent: string) => {
-    const t = prompt("Tipo do arquivo: 1 = Página HTML, 2 = Componente React, 3 = Script", "1");
-    const type = t === "2" ? "component" : t === "3" ? "script" : t === "1" ? "page" : null;
+    const t = prompt("Tipo do arquivo: 1 = Página HTML, 2 = Componente React, 3 = Script, 4 = Estilo CSS", "1");
+    const type = t === "2" ? "component" : t === "3" ? "script" : t === "4" ? "style" : t === "1" ? "page" : null;
     if (type) createFile(type, undefined, parent);
   };
   const move = (f: ProjectFile) => {

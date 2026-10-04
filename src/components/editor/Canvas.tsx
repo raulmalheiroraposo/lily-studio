@@ -4,8 +4,14 @@ import { Code2, Trash2 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import { BlockRenderer } from "@/components/blocks/HtmlBlock";
 import { CodeEditorModal } from "./CodeEditorModal";
-import CodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
+import {
+  EDITOR_LANGUAGES,
+  EDITOR_THEMES,
+  MonacoCodeEditor,
+  languageFromName,
+  type EditorLanguage,
+  type EditorTheme,
+} from "./MonacoCodeEditor";
 import { runBinding } from "@/lib/script-runtime";
 import { ReactBlock } from "@/components/blocks/ReactBlock";
 import { blocksToTsx } from "@/lib/tsx-generator";
@@ -28,6 +34,8 @@ export function Canvas({ preview }: { preview: boolean }) {
   const setBlocks = useProject((s) => s.setBlocks);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
   const [tsxOpen, setTsxOpen] = useState(false);
+  const [editorLanguage, setEditorLanguage] = useState<EditorLanguage>("javascript");
+  const [editorTheme, setEditorTheme] = useState<EditorTheme>("vs-dark");
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const [surfaceSize, setSurfaceSize] = useState({ w: 1100, h: 900 });
   const [guides, setGuides] = useState<Guides | null>(null);
@@ -45,6 +53,10 @@ export function Canvas({ preview }: { preview: boolean }) {
     setSurfaceSize({ w: el.clientWidth, h: el.clientHeight });
     return () => ro.disconnect();
   }, [activeFile?.id]);
+
+  useEffect(() => {
+    if (activeFile) setEditorLanguage(languageFromName(activeFile.name));
+  }, [activeFile?.id, activeFile?.name]);
 
   const compTags = componentTagMap(files);
   const compSources = componentSources(files);
@@ -113,26 +125,39 @@ export function Canvas({ preview }: { preview: boolean }) {
     );
   }
 
-  if (activeFile.type === "script") {
+  if (activeFile.type === "script" || activeFile.type === "style") {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between border-b border-border bg-[color:var(--panel)] px-3 py-2 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-[color:var(--panel)] px-3 py-2 text-xs">
           <div className="font-semibold">
-            Editando script:&nbsp;<span className="font-mono text-primary">{activeFile.name}</span>
+            Editando {activeFile.type === "style" ? "estilo" : "script"}:&nbsp;
+            <span className="font-mono text-primary">{activeFile.name}</span>
           </div>
-          <div className="text-muted-foreground">
-            Declare funções (<code>function nome()</code> / <code>const nome = () =&gt; …</code>) — elas ficam disponíveis nos eventos.
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Linguagem do editor"
+              value={editorLanguage}
+              onChange={(event) => setEditorLanguage(event.target.value as EditorLanguage)}
+              className="rounded border border-border bg-input px-2 py-1"
+            >
+              {EDITOR_LANGUAGES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select
+              aria-label="Tema do editor"
+              value={editorTheme}
+              onChange={(event) => setEditorTheme(event.target.value as EditorTheme)}
+              className="rounded border border-border bg-input px-2 py-1"
+            >
+              {EDITOR_THEMES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          <CodeMirror
+        <div className="min-h-0 flex-1">
+          <MonacoCodeEditor
             value={activeFile.code ?? ""}
-            height="100%"
-            theme="dark"
-            extensions={[javascript({ jsx: false, typescript: false })]}
-            onChange={(v) => updateFileCode(activeFile.id, v)}
-            basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: true }}
-            style={{ height: "100%", fontSize: 13 }}
+            language={editorLanguage}
+            theme={editorTheme}
+            onChange={(value) => updateFileCode(activeFile.id, value)}
           />
         </div>
       </div>
@@ -160,8 +185,12 @@ export function Canvas({ preview }: { preview: boolean }) {
     >
       <div
         ref={surfaceRef}
-        className="relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
+        className="page relative mx-auto my-4 min-h-[600px] w-[min(1100px,96%)] rounded-lg border border-border bg-background shadow-xl sm:my-8 sm:min-h-[900px]"
       >
+        {(activeFile.cssFileIds ?? []).map((id) => {
+          const cssFile = files.find((file) => file.id === id && file.type === "style");
+          return cssFile ? <style key={id}>{cssFile.code ?? ""}</style> : null;
+        })}
         {preview && isComponent ? (
           <div className="absolute inset-0 p-4">
             <ReactBlock code={activeFile.code ?? ""} components={compSources} />

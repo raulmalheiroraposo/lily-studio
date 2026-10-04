@@ -8,6 +8,8 @@ export const Route = createFileRoute("/manual")({
       { name: "description", content: "Guia completo de uso da plataforma no-code Lily Studio: canvas, componentes, scripts, propriedades, atributos, eventos e editor de código." },
       { property: "og:title", content: "Manual — Lily Studio" },
       { property: "og:description", content: "Como usar o editor visual, criar scripts e editar código." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Manual,
@@ -43,7 +45,7 @@ function Manual() {
         <h2>1. Interface</h2>
         <ul>
           <li><b>Barra superior:</b> nome do projeto, arquivo aberto, alternador <i>Preview / Editar</i>, botões <i>Importar</i>, <i>Salvar/Exportar</i> e <i>Manual</i>.</li>
-          <li><b>Painel esquerdo:</b> alterna entre <i>Arquivos</i> (páginas HTML, componentes React, scripts) e <i>Componentes</i> (paleta HTML/CSS/Gráficos/React).</li>
+          <li><b>Painel esquerdo:</b> alterna entre <i>Arquivos</i> (páginas HTML, componentes React, scripts e estilos CSS) e <i>Componentes</i> (paleta HTML/CSS/Gráficos/React).</li>
           <li><b>Canvas central:</b> área de edição visual do arquivo aberto (drag &amp; resize).</li>
           <li><b>Painel direito:</b> propriedades, atributos, estilo e eventos do componente selecionado.</li>
         </ul>
@@ -55,6 +57,7 @@ function Manual() {
               <li><b>Páginas HTML</b> — página do site montada com blocos HTML.</li>
               <li><b>Componentes React</b> — bloco reutilizável com código React.</li>
               <li><b>Scripts</b> — arquivo JavaScript com funções que podem ser chamadas por eventos.</li>
+              <li><b>Estilos CSS</b> — folha de estilos reutilizável, vinculada a uma ou mais páginas.</li>
             </ul>
           </li>
           <li>Clique no arquivo para abri-lo no canvas.</li>
@@ -75,7 +78,7 @@ function Manual() {
         <ul>
           <li><b>Props:</b> texto, atributos (src, href, placeholder), largura/altura.</li>
           <li><b>Attrs:</b> atributos HTML dinâmicos aplicados diretamente à tag (ex.: <code>id</code>, <code>title</code>, <code>data-*</code>, <code>aria-*</code>). Adicione qualquer par nome/valor.</li>
-          <li><b>Estilo:</b> background, color, border, borderRadius, padding, fontSize, fontWeight, textAlign — CSS puro.</li>
+          <li><b>Estilo:</b> vincule arquivos CSS à página e edite background, color, border, borderRadius, padding, fontSize, fontWeight e textAlign do bloco selecionado.</li>
           <li><b>Eventos:</b> escolha um evento (<code>onClick</code>, <code>onChange</code> etc.) e vincule a uma <b>função de script</b> ou a uma <b>URL</b> (site/API) com o método HTTP desejado.</li>
         </ul>
 
@@ -89,13 +92,22 @@ function Manual() {
           <li>Ative <b>Preview</b> na barra superior para disparar os eventos de verdade.</li>
         </ol>
 
-        <h2>6. Editor de código-fonte (CodeMirror)</h2>
+        <h2>6. Editor de código-fonte (Monaco)</h2>
         <p>Para componentes <b>React</b> há um botão <i>Editar código-fonte</i>. Arquivos de <b>Script</b> abrem o editor diretamente no canvas. Ambos oferecem:</p>
         <ul>
-          <li>Realce de sintaxe (JS/TS/JSX, HTML, CSS, JSON).</li>
-          <li>Numeração de linhas, dobra de código, linha ativa.</li>
+          <li>Realce de sintaxe para JavaScript, TypeScript, HTML, CSS e JSON, com linguagem selecionável.</li>
+          <li>Temas claro, escuro e alto contraste, numeração de linhas, minimapa e dobra de código.</li>
           <li>Alterações salvas automaticamente no projeto.</li>
         </ul>
+
+        <h2>6.4 Estilos CSS da página</h2>
+        <ol>
+          <li>Crie um arquivo de <b>Estilo CSS</b> pelo botão de novo arquivo na árvore.</li>
+          <li>Abra uma página, deixe o canvas sem bloco selecionado e use o painel direito para vincular os arquivos CSS desejados.</li>
+          <li>Também é possível usar <b>Criar e vincular CSS</b> na aba <i>Estilo</i> de qualquer bloco selecionado.</li>
+          <li>Clique no ícone de código ao lado do CSS vinculado para editá-lo no Monaco. As mudanças aparecem no canvas e no Preview.</li>
+          <li>Os arquivos vinculados são incluídos automaticamente no site, no ZIP e nas gravações locais.</li>
+        </ol>
 
         <h2>6.1 Componentes React funcionais</h2>
         <p>O código dos blocos React é compilado no navegador (JSX/TSX) e <b>executa de verdade</b> no canvas, no Preview e no site publicado — inclusive com hooks (<code>useState</code>, <code>useEffect</code>, <code>useMemo</code>, <code>useRef</code>, <code>useCallback</code>) já disponíveis no escopo. Use <code>export default function ...</code> (ou apenas o corpo com <code>return (...)</code>).</p>
@@ -132,9 +144,9 @@ function Manual() {
         <ul>
           <li><b>Autosave:</b> toda alteração no canvas, nos scripts e nos arquivos é salva na hora no navegador — a barra superior mostra o horário do último salvamento.</li>
           <li><b>Histórico:</b> aba <i>Histórico</i> no painel esquerdo lista os últimos 50 pontos de alteração; clique em um deles para restaurar. Também há <i>Desfazer</i>/<i>Refazer</i> na barra superior.</li>
-          <li><b>Salvar/Exportar</b> baixa um arquivo <code>projeto-nocode.json</code> com <i>todo</i> o projeto (páginas, componentes e scripts).</li>
+          <li><b>Exportar Projeto</b> baixa um arquivo <code>projeto-nocode.json</code> com <i>todo</i> o projeto (páginas, componentes, scripts e estilos).</li>
           <li><b>Baixar ZIP</b> gera um pacote com <code>pages/*.html</code>, <code>components/*.tsx</code>, <code>scripts/*.js</code>, o JSON do projeto e um LEIA-ME — ideal para compartilhar.</li>
-          <li><b>Importar</b> carrega um <code>.json</code> exportado anteriormente, substituindo o projeto atual.</li>
+          <li><b>Importar Projeto</b> carrega um <code>.json</code> exportado anteriormente, substituindo o projeto atual.</li>
         </ul>
 
         <h2>8. Painel de logs no Preview</h2>

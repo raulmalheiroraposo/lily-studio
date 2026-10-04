@@ -301,15 +301,18 @@ export const useProject = create<ProjectState & Extra & Actions>()(
             ? `pagina-${get().files.filter((f) => f.type === "page").length + 1}.html`
             : type === "component"
             ? `Componente${get().files.filter((f) => f.type === "component").length + 1}.tsx`
-            : type === "style" ? `estilo-${get().files.filter((f) => f.type === "style").length + 1}.css` : `script-${get().files.filter((f) => f.: type === "script" || type === "style").length + 1}.js`);
+            : type === "style"
+            ? `estilo-${get().files.filter((f) => f.type === "style").length + 1}.css`
+            : `script-${get().files.filter((f) => f.type === "script").length + 1}.js`);
         const file: ProjectFile =
-          : type === "script" || type === "style"
+          type === "script" || type === "style"
             ? {
                 id,
                 name: defaultName,
                 type,
-                code:
-                  "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
+                code: type === "style"
+                  ? ".page {\n  background: #ffffff;\n  color: #1f2937;\n}\n"
+                  : "// Defina funções aqui. Elas ficam disponíveis para os eventos dos componentes.\n// Exemplo:\nfunction saudacao() {\n  alert('Olá do script!');\n}\n",
               }
             : type === "component"
             ? withSyncedCode(
@@ -336,12 +339,29 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         })),
       deleteFile: (id) =>
         track("Excluiu arquivo", (s) => ({
-          files: s.files.filter((f) => f.id !== id),
+          files: s.files
+            .filter((f) => f.id !== id)
+            .map((f) => f.cssFileIds?.includes(id)
+              ? { ...f, cssFileIds: f.cssFileIds.filter((cssId) => cssId !== id) }
+              : f),
           activeFileId: s.activeFileId === id ? null : s.activeFileId,
         })),
       renameFile: (id, name) =>
         track(`Renomeou para ${name}`, (s) => ({
           files: s.files.map((f) => (f.id === id ? { ...f, name } : f)),
+        })),
+      toggleFileCss: (fileId, cssFileId) =>
+        track("Alterou estilos da página", (s) => ({
+          files: s.files.map((f) => {
+            if (f.id !== fileId || (f.type !== "page" && f.type !== "component")) return f;
+            const current = f.cssFileIds ?? [];
+            return {
+              ...f,
+              cssFileIds: current.includes(cssFileId)
+                ? current.filter((id) => id !== cssFileId)
+                : [...current, cssFileId],
+            };
+          }),
         })),
       setActiveFile: (id) => set({ activeFileId: id, selectedBlockId: null }),
       updateFileCode: (id, code) =>
@@ -363,7 +383,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
         const { activeFileId, files } = get();
         if (!activeFileId) return;
         const file = files.find((f) => f.id === activeFileId);
-        if (!file || file.: type === "script" || type === "style") return;
+        if (!file || file.type === "script" || file.type === "style") return;
         const block = defaultBlockFor(kind);
         // A React component nested inside another React component gets its own
         // .tsx file, referenced by tag in the parent, so it can be reused.

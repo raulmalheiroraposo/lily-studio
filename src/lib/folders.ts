@@ -4,6 +4,7 @@ export const DEFAULT_FOLDER: Record<ProjectFile["type"], string> = {
   page: "paginas",
   component: "componentes",
   script: "scripts",
+  style: "estilos",
 };
 
 /** Pasta onde o arquivo aparece na árvore (padrão pelo tipo quando não definida). */
@@ -20,5 +21,6 @@ export function typeFromName(name: string): ProjectFile["type"] | null {
   if (/\.html?$/.test(n)) return "page";
   if (/\.(tsx|jsx)$/.test(n)) return "component";
   if (/\.(js|ts|mjs)$/.test(n)) return "script";
+  if (/\.css$/.test(n)) return "style";
   return null;
 }

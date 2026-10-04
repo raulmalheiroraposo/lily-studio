@@ -10,6 +10,9 @@ const EVENTS = ["onClick", "onChange", "onMouseEnter", "onMouseLeave", "onFocus"
 const METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 
 export function PropertiesPanel() {
+  const activeFile = useProject((s) =>
+    s.activeFileId ? s.files.find((file) => file.id === s.activeFileId) ?? null : null
+  );
   const block = useProject((s) => {
     const file = s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null;
     return file?.blocks?.find((b) => b.id === s.selectedBlockId) ?? null;
@@ -17,10 +20,13 @@ export function PropertiesPanel() {
   const allFiles = useProject((s) => s.files);
   const scripts = useMemo(() => allFiles.filter((f) => f.type === "script"), [allFiles]);
   const components = useMemo(() => allFiles.filter((f) => f.type === "component"), [allFiles]);
+  const styles = useMemo(() => allFiles.filter((f) => f.type === "style"), [allFiles]);
   const updateBlock = useProject((s) => s.updateBlock);
   const updateFileCode = useProject((s) => s.updateFileCode);
   const createFile = useProject((s) => s.createFile);
   const renameFile = useProject((s) => s.renameFile);
+  const toggleFileCss = useProject((s) => s.toggleFileCss);
+  const setActiveFile = useProject((s) => s.setActiveFile);
   const addEvent = useProject((s) => s.addEvent);
   const removeEvent = useProject((s) => s.removeEvent);
 
@@ -44,10 +50,55 @@ export function PropertiesPanel() {
     return s ? listScriptFunctions(s.code ?? "") : [];
   }, [scripts, newScriptId]);
 
+  const canStyleFile = activeFile?.type === "page" || activeFile?.type === "component";
+  const styleFilesPanel = canStyleFile && activeFile ? (
+    <div className="space-y-2 rounded border border-border p-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Arquivos CSS</div>
+      {styles.length === 0 ? (
+        <div className="text-muted-foreground">Nenhum arquivo CSS criado.</div>
+      ) : (
+        styles.map((file) => (
+          <div key={file.id} className="flex items-center gap-2">
+            <label className="flex min-w-0 flex-1 items-center gap-2">
+              <input
+                type="checkbox"
+                checked={(activeFile.cssFileIds ?? []).includes(file.id)}
+                onChange={() => toggleFileCss(activeFile.id, file.id)}
+              />
+              <span className="truncate font-mono">{file.name}</span>
+            </label>
+            <button
+              title={`Editar ${file.name}`}
+              onClick={() => setActiveFile(file.id)}
+              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Code2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))
+      )}
+      <button
+        onClick={() => {
+          const id = createFile("style");
+          toggleFileCss(activeFile.id, id);
+          setActiveFile(id);
+        }}
+        className="flex w-full items-center justify-center gap-1 rounded border border-border py-1.5 hover:bg-accent"
+      >
+        <Plus className="h-3.5 w-3.5" /> Criar e vincular CSS
+      </button>
+    </div>
+  ) : null;
+
   if (!block) {
     return (
-      <div className="p-4 text-xs text-muted-foreground">
-        Selecione um componente no canvas para editar suas propriedades, atributos, estilos e eventos.
+      <div className="space-y-3 p-4 text-xs">
+        {styleFilesPanel}
+        <div className="text-muted-foreground">
+          {canStyleFile
+            ? "Selecione um componente no canvas para editar seus estilos individuais."
+            : "Selecione uma página ou componente para editar suas propriedades e estilos."}
+        </div>
       </div>
     );
   }
@@ -344,6 +395,7 @@ export function PropertiesPanel() {
 
         {tab === "style" && (
           <>
+            {styleFilesPanel}
             {["background", "color", "border", "borderRadius", "padding", "fontSize", "fontWeight", "textAlign"].map((k) => (
               <Field key={k} label={k}>
                 <input
