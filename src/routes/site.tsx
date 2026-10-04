@@ -36,6 +36,9 @@ function SitePage() {
     files.find((f) => f.id === activeFileId && f.type === "page") ??
     files.find((f) => f.type === "page") ??
     null;
+  const pageStyles = (page?.cssFileIds ?? [])
+    .map((id) => files.find((file) => file.id === id && file.type === "style"))
+    .filter((file) => !!file);
 
   const resolveCode = useCallback(
     (block: { code?: string; sourceFileId?: string }) =>
@@ -77,6 +80,7 @@ function SitePage() {
 
   return (
     <main className="relative min-h-screen w-full bg-background">
+      {pageStyles.map((file) => <style key={file.id}>{file.code ?? ""}</style>)}
       {page.blocks?.map((block) => (
         <div
           key={block.id}

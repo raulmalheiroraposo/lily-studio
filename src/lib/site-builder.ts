@@ -189,6 +189,9 @@ export function buildPageHtml(
   opts: { pages: ProjectFile[]; vendorLocal: boolean }
 ) {
   const scripts = files.filter((f) => f.type === "script");
+  const styles = (page.cssFileIds ?? [])
+    .map((id) => files.find((f) => f.id === id && f.type === "style"))
+    .filter((f): f is ProjectFile => !!f);
   const blocks = (page.blocks ?? [])
     .map((b) => {
       const code = b.sourceFileId ? files.find((f) => f.id === b.sourceFileId)?.code ?? "" : b.code ?? "";
@@ -236,6 +239,7 @@ export function buildPageHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(page.name.replace(/\.html$/, ""))}</title>
   <meta name="description" content="Página ${esc(page.name.replace(/\.html$/, ""))} exportada do Lily Studio, funcional offline." />
+${styles.map((style) => `  <link rel="stylesheet" href="styles/${cssFileName(style)}" />`).join("\n")}
   <style>
     :root { color-scheme: dark; }
     body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0b1220; color:#e6ecf7; }
@@ -272,6 +276,10 @@ export function pageFileName(file: ProjectFile) {
 
 export function scriptFileName(file: ProjectFile) {
   return /\.[cm]?js$/.test(file.name) ? file.name : `${file.name}.js`;
+}
+
+export function cssFileName(file: ProjectFile) {
+  return file.name.endsWith(".css") ? file.name : `${file.name}.css`;
 }
 
 const BASE_RUNTIME_JS = String.raw`(function () {

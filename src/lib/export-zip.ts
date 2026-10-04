@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import type { ProjectFile, ProjectState } from "./types";
-import { SITE_RUNTIME_JS, buildPageHtml, pageFileName, scriptFileName } from "./site-builder";
+import { SITE_RUNTIME_JS, buildPageHtml, cssFileName, pageFileName, scriptFileName } from "./site-builder";
 
 const VENDORS: { file: string; url: string }[] = [
   { file: "react.js", url: "https://unpkg.com/react@18/umd/react.production.min.js" },
@@ -49,6 +49,7 @@ ${blocks}
 export function writeSite(site: JSZip, project: ProjectState, vendors: { file: string; code: string }[] | null) {
   const scripts = project.files.filter((f) => f.type === "script");
   const pages = project.files.filter((f) => f.type === "page");
+  const styles = project.files.filter((f) => f.type === "style");
 
   // --- Site completo, funcional offline ---
   for (const page of pages) {
@@ -65,6 +66,7 @@ export function writeSite(site: JSZip, project: ProjectState, vendors: { file: s
   }
   site.file("runtime.js", SITE_RUNTIME_JS);
   for (const s of scripts) site.file(`scripts/${scriptFileName(s)}`, s.code ?? "");
+  for (const style of styles) site.file(`styles/${cssFileName(style)}`, style.code ?? "");
   if (vendors) for (const v of vendors) site.file(`vendor/${v.file}`, v.code);
 }
 
@@ -86,6 +88,8 @@ export async function exportProjectZip(project: ProjectState) {
   for (const file of project.files) {
     if (file.type === "script") {
       zip.file(`scripts/${scriptFileName(file)}`, file.code ?? "");
+    } else if (file.type === "style") {
+      zip.file(`styles/${cssFileName(file)}`, file.code ?? "");
     } else if (file.type === "component") {
       zip.file(
         `components/${file.name.endsWith(".tsx") ? file.name : `${file.name}.tsx`}`,
@@ -109,6 +113,7 @@ export async function exportProjectZip(project: ProjectState) {
 - \`site/scripts/\` — scripts do projeto usados pelos eventos
 - \`components/\` — componentes React (.tsx)
 - \`scripts/\` — código-fonte dos scripts
+- \`styles/\` — arquivos CSS vinculados às páginas
 - \`projeto-nocode.json\` — projeto completo (reimporte no Lily Studio)
 
 Gerado em ${new Date().toLocaleString("pt-BR")}.
