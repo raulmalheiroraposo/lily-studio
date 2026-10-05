@@ -63,13 +63,13 @@ function defaultBlockFor(kind: BlockKind): Block {
   };
   switch (kind) {
     case "heading":
-      return { ...base, text: "Título", h: 60, style: { fontSize: "28px", fontWeight: "700" } };
+      return { ...base, text: "Título", h: 60, style: { fontSize: "28px", fontWeight: "700", color: "#e9ebef" } };
     case "paragraph":
-      return { ...base, text: "Um parágrafo editável.", h: 80 };
+      return { ...base, text: "Um parágrafo editável.", h: 80, style: { color: "#e9ebef" } };
     case "button":
-      return { ...base, text: "Botão", w: 140, h: 44 };
+      return { ...base, text: "Botão", w: 140, h: 44, style: { background: "#26acff", color: "#070b14", borderRadius: "6px" } };
     case "input":
-      return { ...base, props: { placeholder: "Digite..." }, w: 220, h: 40 };
+      return { ...base, props: { placeholder: "Digite..." }, w: 220, h: 40, style: { background: "#252930", color: "#e9ebef", border: "1px solid #292e36", borderRadius: "6px" } };
     case "image":
       return {
         ...base,
@@ -78,7 +78,7 @@ function defaultBlockFor(kind: BlockKind): Block {
         h: 200,
       };
     case "link":
-      return { ...base, text: "Link", props: { href: "#" }, w: 120, h: 32 };
+      return { ...base, text: "Link", props: { href: "#" }, w: 120, h: 32, style: { color: "#26acff" } };
     case "video":
       return {
         ...base,
@@ -101,6 +101,7 @@ function defaultBlockFor(kind: BlockKind): Block {
         w: 400,
         h: 160,
         props: { columns: "Coluna A,Coluna B", rows: 2 },
+        style: { color: "#e9ebef" },
       };
     case "progress":
       return { ...base, props: { value: 60, max: 100 }, w: 260, h: 20 };
@@ -126,7 +127,7 @@ function defaultBlockFor(kind: BlockKind): Block {
     case "div":
     case "section":
     default:
-      return { ...base, style: { background: "rgba(120,140,200,0.12)", border: "1px dashed #557" } };
+      return { ...base, style: { background: "#1c2233", border: "1px dashed #555577", color: "#e9ebef" } };
   }
 }
 
@@ -320,7 +321,7 @@ export const useProject = create<ProjectState & Extra & Actions>()(
                 defaultComponentCode
               )
             : { id, name: defaultName, type, blocks: [] };
-        if (folder) file.folder = folder;
+        if (folder !== undefined) file.folder = folder;
         track(`Criou ${defaultName}`, (s) => ({ files: [...s.files, file], activeFileId: id }));
         return id;
       },
