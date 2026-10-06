@@ -1,5 +1,5 @@
 // Lily Studio — app desktop (Electron). Serve o editor compilado e permite iniciar o site em servidor local.
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -27,6 +27,51 @@ function serveDir(root, fallback, port = 0) {
     srv.listen(port, "127.0.0.1", () => resolve(`http://127.0.0.1:${srv.address().port}/`));
   });
 }
+
+// ---- Arquivos locais: o editor lê e grava direto na pasta original ----
+const allowed = new Set();
+const CODE_EXT = /\.(html?|tsx|jsx|js|ts|mjs|css|json)$/i;
+const isAllowed = (p) => [...allowed].some((r) => p === r || p.startsWith(r + path.sep) || p.startsWith(r + "/"));
+function walk(root, rel = "", out = { entries: [], dirs: [] }) {
+  for (const ent of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
+    if (ent.name.startsWith(".") || ent.name === "node_modules") continue;
+    const r = rel ? rel + "/" + ent.name : ent.name;
+    if (ent.isDirectory()) { out.dirs.push(r); walk(root, r, out); }
+    else if (CODE_EXT.test(ent.name)) out.entries.push({ path: r, text: fs.readFileSync(path.join(root, r), "utf8") });
+  }
+  return out;
+}
+ipcMain.handle("lily:open-folder", async () => {
+  const r = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+  if (r.canceled || !r.filePaths[0]) return null;
+  const root = r.filePaths[0];
+  allowed.add(root);
+  return { root, name: path.basename(root), ...walk(root) };
+});
+ipcMain.handle("lily:pick-folder", async () => {
+  const r = await dialog.showOpenDialog({ properties: ["openDirectory", "createDirectory"] });
+  if (r.canceled || !r.filePaths[0]) return null;
+  allowed.add(r.filePaths[0]);
+  return r.filePaths[0];
+});
+ipcMain.handle("lily:open-files", async () => {
+  const r = await dialog.showOpenDialog({ properties: ["openFile", "multiSelections"], filters: [{ name: "Código", extensions: ["html", "htm", "tsx", "jsx", "js", "ts", "css", "json"] }] });
+  if (r.canceled) return [];
+  return r.filePaths.map((p) => { allowed.add(p); return { path: p, name: path.basename(p), text: fs.readFileSync(p, "utf8") }; });
+});
+ipcMain.handle("lily:write-file", async (_e, p, text) => {
+  p = path.resolve(p);
+  if (!isAllowed(p)) throw new Error("Caminho fora da pasta aberta");
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, text, "utf8");
+});
+ipcMain.handle("lily:rename-file", async (_e, from, to) => {
+  from = path.resolve(from); to = path.resolve(to);
+  if (!isAllowed(from) || !isAllowed(to)) throw new Error("Caminho fora da pasta aberta");
+  if (!fs.existsSync(from)) return;
+  fs.mkdirSync(path.dirname(to), { recursive: true });
+  fs.renameSync(from, to);
+});
 
 let siteUrl = null;
 ipcMain.handle("lily:start-server", async (_e, files) => {
