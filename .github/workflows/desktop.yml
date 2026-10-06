@@ -1,0 +1,27 @@
+name: Executáveis desktop do Lily Studio
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --legacy-peer-deps
+      - run: bash scripts/build-desktop.sh all
+      - name: Compactar
+        run: |
+          cd desktop-release
+          for d in */; do d="${d%/}"; zip -qr "../${d// /-}.zip" "$d"; done
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-latest
+          name: Lily Studio desktop (mais recente)
+          prerelease: false
+          make_latest: true
+          files: "*.zip"
