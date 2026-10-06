@@ -45,6 +45,14 @@ export function applySource(
       ? parsePageHtml(source, all).blocks
       : parseComponentTsx(source, all, tagIds).blocks;
   }
+  // O elemento editado continua sendo o selecionado, mesmo que o id tenha sido apagado ou alterado.
+  if (/data-block-id=/.test(source)) {
+    source = source.replace(/data-block-id=(\{?)"[^"]*"(\}?)/, `data-block-id=$1"${block.id}"$2`);
+  } else {
+    source = file.type === "page"
+      ? `<div data-block-id="${block.id}" style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.w}px;height:${block.h}px;">${source}</div>`
+      : `<div data-block-id={"${block.id}"} style={{position:"absolute",left:"${block.x}px",top:"${block.y}px",width:"${block.w}px",height:"${block.h}px"}}>${source}</div>`;
+  }
   const parsed =
     file.type === "page"
       ? parsePageHtml(`<div class="page">${source}</div>`, [block]).blocks
