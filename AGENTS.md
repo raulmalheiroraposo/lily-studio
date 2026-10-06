@@ -11,3 +11,6 @@
 - Desktop build: `LILY_DESKTOP=1` switches TanStack Start to SPA mode and Electron (`electron/main.cjs`) serves `dist/client/_shell.html` over a local http server — avoids file:// and SSR issues.
 - Local file I/O lives in `src/lib/local-fs.ts` (File System Access API with download/input fallbacks); site/mobile packaging in `src/lib/deploy.ts` reuses `writeSite` from export-zip — one site generator for all outputs.
 - Project styles are first-class CSS files linked by file ID from pages/components, so renaming and organizing files never breaks their association.
+- Desktop file editing goes through Electron IPC (`lily:open-folder`, `lily:write-file`, ...) restricted to folders/files the user opened; `startDesktopLiveSave` writes changes back in place — reliable disk access without browser permission prompts.
+- All code editors share `SourceEditorPane`; page/component source shows only the selected block via `src/lib/block-source.ts` — one editor UI everywhere.
+- Desktop executables are built by `scripts/build-desktop.*` (packager via npx with a pinned Electron version) and published by `.github/workflows/desktop.yml` to the `desktop-latest` release.
