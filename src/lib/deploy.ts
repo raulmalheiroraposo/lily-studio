@@ -2,10 +2,11 @@
 import JSZip from "jszip";
 import type { ProjectState } from "./types";
 import { downloadBlob, fetchVendors, writeSite } from "./export-zip";
+import type { LilyDesktopApi } from "./local-fs";
 
 declare global {
   interface Window {
-    lilyDesktop?: { startServer: (files: Record<string, string>) => Promise<string> };
+    lilyDesktop?: LilyDesktopApi;
   }
 }
 

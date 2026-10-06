@@ -59,7 +59,7 @@ export function FileTree() {
   const newFile = (parent: string) => {
     const t = prompt("Tipo do arquivo: 1 = Página HTML, 2 = Componente React, 3 = Script, 4 = Estilo CSS", "1");
     const type = t === "2" ? "component" : t === "3" ? "script" : t === "4" ? "style" : t === "1" ? "page" : null;
-    if (type) createFile(type, undefined, parent);
+    if (type) createFile(type, undefined, parent || undefined);
   };
   const move = (f: ProjectFile) => {
     const dest = prompt("Mover para a pasta (ex.: paginas/blog). Vazio = raiz:", folderOf(f));

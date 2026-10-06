@@ -4,14 +4,9 @@ import { Code2, Trash2 } from "lucide-react";
 import { useProject } from "@/lib/project-store";
 import { BlockRenderer } from "@/components/blocks/HtmlBlock";
 import { CodeEditorModal } from "./CodeEditorModal";
-import {
-  EDITOR_LANGUAGES,
-  EDITOR_THEMES,
-  MonacoCodeEditor,
-  languageFromName,
-  type EditorLanguage,
-  type EditorTheme,
-} from "./MonacoCodeEditor";
+import { languageFromName } from "./MonacoCodeEditor";
+import { SourceEditorPane } from "./SourceEditorPane";
+import { applySource, fileSourceFor } from "@/lib/block-source";
 import { runBinding } from "@/lib/script-runtime";
 import { ReactBlock } from "@/components/blocks/ReactBlock";
 import { blocksToTsx } from "@/lib/tsx-generator";
@@ -20,7 +15,7 @@ import { componentSources, componentTagMap, tagToFileId } from "@/lib/component-
 import type { Block } from "@/lib/types";
 import { snapRect, snapResize, type Guides } from "@/lib/snap";
 
-export function Canvas({ preview }: { preview: boolean }) {
+export function Canvas({ preview, sourceOpen = false, onSourceClose }: { preview: boolean; sourceOpen?: boolean; onSourceClose?: () => void }) {
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
@@ -33,9 +28,6 @@ export function Canvas({ preview }: { preview: boolean }) {
   const setGeneratedCode = useProject((s) => s.setGeneratedCode);
   const setBlocks = useProject((s) => s.setBlocks);
   const [codeModal, setCodeModal] = useState<{ id: string; code: string } | null>(null);
-  const [tsxOpen, setTsxOpen] = useState(false);
-  const [editorLanguage, setEditorLanguage] = useState<EditorLanguage>("javascript");
-  const [editorTheme, setEditorTheme] = useState<EditorTheme>("vs-dark");
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const [surfaceSize, setSurfaceSize] = useState({ w: 1100, h: 900 });
   const [guides, setGuides] = useState<Guides | null>(null);
@@ -54,9 +46,6 @@ export function Canvas({ preview }: { preview: boolean }) {
     return () => ro.disconnect();
   }, [activeFile?.id]);
 
-  useEffect(() => {
-    if (activeFile) setEditorLanguage(languageFromName(activeFile.name));
-  }, [activeFile?.id, activeFile?.name]);
 
   const compTags = componentTagMap(files);
   const compSources = componentSources(files);
@@ -127,40 +116,35 @@ export function Canvas({ preview }: { preview: boolean }) {
 
   if (activeFile.type === "script" || activeFile.type === "style") {
     return (
-      <div className="flex h-full flex-col">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-[color:var(--panel)] px-3 py-2 text-xs">
-          <div className="font-semibold">
-            Editando {activeFile.type === "style" ? "estilo" : "script"}:&nbsp;
-            <span className="font-mono text-primary">{activeFile.name}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              aria-label="Linguagem do editor"
-              value={editorLanguage}
-              onChange={(event) => setEditorLanguage(event.target.value as EditorLanguage)}
-              className="rounded border border-border bg-input px-2 py-1"
-            >
-              {EDITOR_LANGUAGES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <select
-              aria-label="Tema do editor"
-              value={editorTheme}
-              onChange={(event) => setEditorTheme(event.target.value as EditorTheme)}
-              className="rounded border border-border bg-input px-2 py-1"
-            >
-              {EDITOR_THEMES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="min-h-0 flex-1">
-          <MonacoCodeEditor
-            value={activeFile.code ?? ""}
-            language={editorLanguage}
-            theme={editorTheme}
-            onChange={(value) => updateFileCode(activeFile.id, value)}
-          />
-        </div>
-      </div>
+      <SourceEditorPane
+        key={activeFile.id}
+        title={<>Editando {activeFile.type === "style" ? "estilo" : "script"}:&nbsp;<span className="font-mono text-primary">{activeFile.name}</span></>}
+        value={activeFile.code ?? ""}
+        language={languageFromName(activeFile.name)}
+        onChange={(value) => updateFileCode(activeFile.id, value)}
+      />
+    );
+  }
+
+  if (sourceOpen) {
+    const sel = blocks.find((b) => b.id === selectedBlockId);
+    return (
+      <SourceEditorPane
+        key={`${activeFile.id}-${sel?.id ?? "all"}`}
+        title={<>{isComponent ? "Código TSX" : "Código HTML"}:&nbsp;<span className="font-mono text-primary">{activeFile.name}</span>{sel && <span className="text-muted-foreground"> — somente o elemento selecionado ({sel.kind})</span>}</>}
+        value={fileSourceFor(activeFile, files, compTags, sel?.id)}
+        language={isComponent ? "typescript" : "html"}
+        extra={sel ? (
+          <button onClick={() => selectBlock(null)} className="rounded border border-border px-2 py-1 hover:bg-accent">Ver arquivo inteiro</button>
+        ) : null}
+        onSave={(v) => {
+          const next = applySource(activeFile, v, tagIds, sel?.id);
+          if (isComponent && !sel) updateFileCode(activeFile.id, v);
+          lastSignature.current = isComponent && !sel ? JSON.stringify(next) : "";
+          setBlocks(activeFile.id, next);
+        }}
+        onClose={onSourceClose}
+      />
     );
   }
 
@@ -369,29 +353,10 @@ export function Canvas({ preview }: { preview: boolean }) {
               ? "Preview do componente"
               : "Arraste componentes da paleta — o TSX é gerado automaticamente"}
           </span>
-          <button
-            onClick={() => setTsxOpen(true)}
-            className="flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-accent"
-          >
-            <Code2 className="h-3 w-3" /> Código TSX
-          </button>
+
         </div>
       </div>
       <div className="min-h-0 flex-1">{surface}</div>
-      <CodeEditorModal
-        open={tsxOpen}
-        title={`Código TSX — ${activeFile.name}`}
-        value={activeFile.code ?? ""}
-        lang="typescript"
-        onClose={() => setTsxOpen(false)}
-        onSave={(v) => {
-          updateFileCode(activeFile.id, v);
-          // Reflects hand-written TSX back into the visual blocks (even from an empty canvas).
-          const parsed = parseComponentTsx(v, activeFile.blocks ?? [], tagIds);
-          lastSignature.current = "";
-          setBlocks(activeFile.id, parsed.blocks);
-        }}
-      />
     </div>
   );
 }
