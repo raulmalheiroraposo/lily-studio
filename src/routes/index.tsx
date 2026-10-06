@@ -55,7 +55,6 @@ function EditorPage() {
   const activeFile = useProject((s) =>
     s.activeFileId ? s.files.find((f) => f.id === s.activeFileId) : null
   );
-  const setBlocks = useProject((s) => s.setBlocks);
   const exportProject = useProject((s) => s.exportProject);
   const importProject = useProject((s) => s.importProject);
   const undo = useProject((s) => s.undo);
