@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink, Code2, FileIcon, FolderOpen, Save, SaveAll, Server, Smartphone, ChevronDown } from "lucide-react";
+import { BookOpen, Download, Upload, Layers, Workflow as WorkflowIcon, LayoutGrid, Play, Pencil, FileArchive, History, Undo2, Redo2, ExternalLink, Code2, FileIcon, FolderOpen, Save, SaveAll, Server, Smartphone, ChevronDown, MonitorDown } from "lucide-react";
 import { ComponentPalette } from "@/components/editor/ComponentPalette";
 import { FileTree } from "@/components/editor/FileTree";
 import { Canvas } from "@/components/editor/Canvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
 import { HistoryPanel } from "@/components/editor/HistoryPanel";
 import { LogPanel } from "@/components/editor/LogPanel";
-import { CodeEditorModal } from "@/components/editor/CodeEditorModal";
 import { exportProjectZip } from "@/lib/export-zip";
-import { openFiles, openFolder, saveAll, saveAs } from "@/lib/local-fs";
+import { openFiles, openFolder, saveAll, saveAs, startDesktopLiveSave } from "@/lib/local-fs";
+import { downloadDesktopApp } from "@/lib/desktop-download";
 import { startLocalServer, buildMobileApp } from "@/lib/deploy";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -17,8 +17,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuShortcut, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { buildPageHtml } from "@/lib/site-builder";
-import { parsePageHtml } from "@/lib/html-importer";
 import { useProject } from "@/lib/project-store";
 import {
   ResizablePanelGroup,
@@ -111,15 +109,9 @@ function EditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pages = files.filter((f) => f.type === "page");
-  const activePage = activeFile?.type === "page" ? activeFile : null;
-  const pageHtml = activePage ? buildPageHtml(activePage, files, { pages, vendorLocal: false }) : "";
-
-  const saveHtml = (source: string) => {
-    if (!activePage) return;
-    const { blocks } = parsePageHtml(source, activePage.blocks ?? []);
-    setBlocks(activePage.id, blocks);
-  };
+  const hasSource = activeFile?.type === "page" || activeFile?.type === "component";
+  useEffect(() => { if (!hasSource) setHtmlOpen(false); }, [hasSource]);
+  useEffect(() => { startDesktopLiveSave(); }, []);
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
@@ -216,13 +208,20 @@ function EditorPage() {
           >
             <Smartphone className="h-3 w-3" /> App móvel
           </button>
-          {activePage && (
+          <button
+            onClick={() => void run(async () => downloadDesktopApp())}
+            title="Baixar o Lily Studio para computador (edita os arquivos direto na pasta)"
+            className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
+          >
+            <MonitorDown className="h-3 w-3" /> Baixar executável
+          </button>
+          {hasSource && (
             <button
-              onClick={() => setHtmlOpen(true)}
-              title="Editar o código HTML da página ativa"
+              onClick={() => setHtmlOpen((o) => !o)}
+              title="Editar o código fonte (do elemento selecionado ou do arquivo inteiro)"
               className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent"
             >
-              <Code2 className="h-3 w-3" /> Código HTML
+              <Code2 className="h-3 w-3" /> {htmlOpen ? "Voltar ao canvas" : activeFile?.type === "component" ? "Código TSX" : "Código HTML"}
             </button>
           )}
           <a
@@ -286,7 +285,7 @@ function EditorPage() {
           <ResizablePanelGroup orientation="vertical" className="h-full">
             <ResizablePanel defaultSize={preview ? 70 : 100} minSize={20}>
               <main className="h-full min-h-0 min-w-0">
-                <Canvas preview={preview} />
+                <Canvas preview={preview} sourceOpen={htmlOpen && !preview} onSourceClose={() => setHtmlOpen(false)} />
               </main>
             </ResizablePanel>
             {preview && (
@@ -312,14 +311,6 @@ function EditorPage() {
       </ResizablePanelGroup>
 
       <Toaster />
-      <CodeEditorModal
-        open={htmlOpen}
-        title={`Código HTML — ${activePage?.name ?? ""}`}
-        value={pageHtml}
-        lang="html"
-        onClose={() => setHtmlOpen(false)}
-        onSave={saveHtml}
-      />
     </div>
   );
 }
