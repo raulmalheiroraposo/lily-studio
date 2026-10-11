@@ -28,3 +28,4 @@ Acesse `http://localhost:8080`. O manual de uso completo está em `/manual`.
 ## Stack
 
 React 19, TypeScript, TanStack Start, Vite 7, Tailwind CSS v4, Zustand, Monaco Editor, Recharts, react-rnd.
+"# lily-studio" 
